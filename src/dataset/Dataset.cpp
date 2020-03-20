@@ -1,20 +1,18 @@
 /*
- * MPI3SNP ~ https://github.com/chponte/mpi3snp
+ * This file is part of Fiuncho.
  *
- * Copyright 2018 Christian Ponte
+ * Fiuncho is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Fiuncho is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -25,19 +23,21 @@
  * @brief Implementation of Dataset class.
  */
 
-#include "Dataset.h"
+#include <fiuncho/dataset/Dataset.h>
 #include <fstream>
 #include <functional>
 #include <numeric>
 
-Dataset::Dataset(std::string tped_path, std::string tfam_path, Representation rep) {
+Dataset::Dataset(std::string tped_path, std::string tfam_path,
+                 Representation rep) {
     std::ifstream file;
     std::vector<Individual> individuals;
     std::vector<SNP> snps;
 
     file.open(tfam_path.c_str(), std::ios::in);
     if (!file.is_open()) {
-        throw Read_error("Error while opening " + tfam_path + ", check file path/permissions");
+        throw Read_error("Error while opening " + tfam_path +
+                         ", check file path/permissions");
     }
     try {
         Individual ind;
@@ -45,13 +45,16 @@ Dataset::Dataset(std::string tped_path, std::string tfam_path, Representation re
             individuals.push_back(ind);
         }
     } catch (const Individual::InvalidIndividual &e) {
-        throw Read_error("Error in " + tfam_path + ":" + std::to_string(individuals.size() + 1) + ": " + e.what());
+        throw Read_error("Error in " + tfam_path + ":" +
+                         std::to_string(individuals.size() + 1) + ": " +
+                         e.what());
     }
     file.close();
 
     file.open(tped_path.c_str(), std::ios::in);
     if (!file.is_open()) {
-        throw Read_error("Error while opening " + tped_path + ", check file path/permissions");
+        throw Read_error("Error while opening " + tped_path +
+                         ", check file path/permissions");
     }
     try {
         SNP snp;
@@ -59,35 +62,40 @@ Dataset::Dataset(std::string tped_path, std::string tfam_path, Representation re
             if (snp.genotypes.size() == individuals.size()) {
                 snps.push_back(snp);
             } else {
-                throw Read_error("Error in " + tped_path + ":" + std::to_string(snps.size() + 1) +
-                                ": the number of nucleotides does not match the number of individuals");
+                throw Read_error("Error in " + tped_path + ":" +
+                                 std::to_string(snps.size() + 1) +
+                                 ": the number of nucleotides does not match "
+                                 "the number of individuals");
             }
         }
     } catch (const SNP::InvalidSNP &e) {
-        throw Read_error("Error in " + tped_path + ":" + std::to_string(snps.size() + 1) + ": " + e.what());
+        throw Read_error("Error in " + tped_path + ":" +
+                         std::to_string(snps.size() + 1) + ": " + e.what());
     }
     file.close();
 
     snp_count = snps.size();
 
     switch (rep) {
-        case Regular:
-            regular_representation(individuals, snps);
-            break;
-        case Transposed:
-            transposed_representation(individuals, snps);
-            break;
+    case Regular:
+        regular_representation(individuals, snps);
+        break;
+    case Transposed:
+        transposed_representation(individuals, snps);
+        break;
     }
 }
 
-unsigned long find_index(unsigned long start, unsigned long end, std::function<bool(unsigned long)> fun) {
+unsigned long find_index(unsigned long start, unsigned long end,
+                         const std::function<bool(unsigned long)> &fun) {
     while (start != end && !fun(start)) {
         start++;
     }
     return start;
 }
 
-void Dataset::regular_representation(std::vector<Individual> &inds, std::vector<SNP> &snps) {
+void Dataset::regular_representation(std::vector<Individual> &inds,
+                                     std::vector<SNP> &snps) {
     std::vector<uint32_t> *cases_vec = nullptr;
     std::vector<uint32_t> *ctrls_vec = nullptr;
     uint32_t cases_buff[3], ctrls_buff[3];
@@ -149,7 +157,8 @@ void Dataset::regular_representation(std::vector<Individual> &inds, std::vector<
     num_cases = (cases[0][0].size() - 1) * 32 + n_cases_buff;
 }
 
-void Dataset::transposed_representation(std::vector<Individual> &inds, std::vector<SNP> &snps) {
+void Dataset::transposed_representation(std::vector<Individual> &inds,
+                                        std::vector<SNP> &snps) {
     std::vector<unsigned long> scases(32), sctrls(32);
     unsigned long ctrlpos = 0, casepos = 0;
     uint32_t cases_buffer[3], ctrls_buffer[3];
@@ -161,17 +170,22 @@ void Dataset::transposed_representation(std::vector<Individual> &inds, std::vect
     num_cases = 0;
     num_ctrls = 0;
 
-    // Iterate on all SNPs considering a block of 32 cases and controls, for all individuals
+    // Iterate on all SNPs considering a block of 32 cases and controls, for all
+    // individuals
     while (num_cases + num_ctrls < inds.size()) {
         // Select next 32 controls and cases
         scases.clear();
         while (scases.size() < 32 &&
-               (casepos = find_index(casepos, inds.size(), [&inds](int k) { return inds[k].ph == 2; })) < inds.size()) {
+               (casepos = find_index(casepos, inds.size(), [&inds](int k) {
+                    return inds[k].ph == 2;
+                })) < inds.size()) {
             scases.push_back(casepos++);
         }
         sctrls.clear();
         while (sctrls.size() < 32 &&
-               (ctrlpos = find_index(ctrlpos, inds.size(), [&inds](int k) { return inds[k].ph == 1; })) < inds.size()) {
+               (ctrlpos = find_index(ctrlpos, inds.size(), [&inds](int k) {
+                    return inds[k].ph == 1;
+                })) < inds.size()) {
             sctrls.push_back(ctrlpos++);
         }
         // Read all SNPs for those 32 controls and cases
@@ -182,13 +196,13 @@ void Dataset::transposed_representation(std::vector<Individual> &inds, std::vect
             }
             for (unsigned long pos : scases) {
                 for (j = 0; j < 3; j++) {
-                    cases_buffer[j] = cases_buffer[j] << 1;
+                    cases_buffer[j] = cases_buffer[j] << (uint32_t)1;
                     cases_buffer[j] += snps[i].genotypes[pos] == j;
                 }
             }
             for (unsigned long pos : sctrls) {
                 for (j = 0; j < 3; j++) {
-                    ctrls_buffer[j] = ctrls_buffer[j] << 1;
+                    ctrls_buffer[j] = ctrls_buffer[j] << (uint32_t)1;
                     ctrls_buffer[j] += snps[i].genotypes[pos] == j;
                 }
             }

@@ -1,27 +1,67 @@
-# MPI3SNP ~ https://github.com/chponte/mpi3snp
+# This file is part of Fiuncho.
 #
-# Copyright 2018 Christian Ponte
+# Fiuncho is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
-# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# Fiuncho is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
-# Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# You should have received a copy of the GNU General Public License
+# along with Fiuncho. If not, see <http://www.gnu.org/licenses/>.
 
-configure_file(${PROJECT_SOURCE_DIR}/src/Definitions.h.in ${PROJECT_BINARY_DIR}/include/Definitions.h)
-add_library(definitions INTERFACE)
-target_include_directories(definitions INTERFACE ${PROJECT_BINARY_DIR}/include/)
+################################# Dependencies #################################
 
-add_subdirectory(utils)
-add_subdirectory(dataset)
-add_subdirectory(engine)
+# System dependencies
+find_package(Threads)
+if (NOT TARGET Threads::Threads)
+    return()
+endif()
 
-add_executable(MPI3SNP main.cpp)
-target_link_libraries(MPI3SNP MPI::MPI_CXX engine_search)
+find_package(MPI)
+if (NOT TARGET MPI::MPI_CXX)
+    return()
+endif()
+
+# External dependencies
+include(FetchContent)
+
+FetchContent_Declare(args
+    GIT_REPOSITORY https://github.com/Taywee/args
+    GIT_TAG 6.2.2)
+FetchContent_GetProperties(args)
+if(NOT args_POPULATED)
+    FetchContent_Populate(args)
+    add_subdirectory(${args_SOURCE_DIR} ${args_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+################################# Definitions  #################################
+
+file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/fiuncho/*.h")
+set(SOURCE_LIST 
+    "${PROJECT_SOURCE_DIR}/src/dataset/Dataset.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/Search.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/cpu/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/cpu/Cpu_node_information.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/cpu/CPUEngine.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/cpu/MutualInformation.cpp"
+    "${PROJECT_SOURCE_DIR}/src/utils/Arg_parser.cpp"
+    "${PROJECT_SOURCE_DIR}/src/utils/IOMpi.cpp"
+    "${PROJECT_SOURCE_DIR}/src/utils/Node_information.cpp"
+    "${PROJECT_SOURCE_DIR}/src/utils/Statistics.cpp")
+
+################################### Targets  ###################################
+
+configure_file(${PROJECT_SOURCE_DIR}/include/fiuncho/Definitions.h.in 
+    ${PROJECT_BINARY_DIR}/include/fiuncho/Definitions.h)
+
+add_library(fiuncho_lib ${SOURCE_LIST})
+
+target_include_directories(fiuncho_lib PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_BINARY_DIR}/include)
+
+target_link_libraries(fiuncho_lib PUBLIC args Threads::Threads MPI::MPI_CXX)

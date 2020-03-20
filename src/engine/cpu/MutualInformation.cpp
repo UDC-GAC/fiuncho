@@ -1,19 +1,18 @@
 /*
- * This file is part of MPI3SNP.
- * Copyright (C) 2018 by Christian Ponte
+ * This file is part of Fiuncho.
  *
- * MPI3SNP is free software: you can redistribute it and/or modify
+ * Fiuncho is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MPI3SNP is distributed in the hope that it will be useful,
+ * Fiuncho is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MPI3SNP. If not, see <http://www.gnu.org/licenses/>.
+ * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -25,21 +24,19 @@
  * @brief MutualInformation class members implementation.
  */
 
-#include "MutualInformation.h"
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <fiuncho/engine/cpu/MutualInformation.h>
 
-MutualInformation::MutualInformation(uint32_t numSNPs, uint16_t numCases,
-                                     const std::vector<std::vector<uint32_t> *> &cases,
-                                     uint16_t numCtrls, const std::vector<std::vector<uint32_t> *> &ctrls) :
-        num_snps(numSNPs),
-        cases(cases),
-        num_cases(numCases),
-        ctrls(ctrls),
-        num_ctrls(numCtrls),
-        _numEntriesCases(numCases / 32 + ((numCases % 32) > 0)),
-        _numEntriesCtrls(numCtrls / 32 + ((numCtrls % 32) > 0)) {
+MutualInformation::MutualInformation(
+    uint32_t numSNPs, uint16_t numCases,
+    const std::vector<std::vector<uint32_t> *> &cases, uint16_t numCtrls,
+    const std::vector<std::vector<uint32_t> *> &ctrls)
+    : num_snps(numSNPs), cases(cases), num_cases(numCases), ctrls(ctrls),
+      num_ctrls(numCtrls),
+      _numEntriesCases(numCases / 32 + ((numCases % 32) > 0)),
+      _numEntriesCtrls(numCtrls / 32 + ((numCtrls % 32) > 0)) {
     invInds = 1.0 / (numCases + numCtrls);
 
     float p = numCases * invInds;
@@ -49,8 +46,9 @@ MutualInformation::MutualInformation(uint32_t numSNPs, uint16_t numCases,
     entY -= p * log2(p);
 }
 
-long MutualInformation::compute(const std::vector<std::pair<uint32_t, uint32_t>> &pairs, uint16_t num_outputs,
-                                Position *output) {
+long MutualInformation::compute(
+    const std::vector<std::pair<uint32_t, uint32_t>> &pairs,
+    uint16_t num_outputs, Position *output) {
     uint32_t id1, id2, id3;
     float auxMIValue;
     long numAnal = 0;
@@ -62,12 +60,13 @@ long MutualInformation::compute(const std::vector<std::pair<uint32_t, uint32_t>>
     TripleContTable tripleTable;
 
     for (auto p : pairs) {
-        //for (uint64_t iterPairs = 0; iterPairs < numPairs; iterPairs++) {
+        // for (uint64_t iterPairs = 0; iterPairs < numPairs; iterPairs++) {
 
         id1 = p.first;
         id2 = p.second;
 
-        _fillDoubleContTable(ctrls[id1], cases[id1], ctrls[id2], cases[id2], doubleTable);
+        _fillDoubleContTable(ctrls[id1], cases[id1], ctrls[id2], cases[id2],
+                             doubleTable);
 
         auxMIValue = _calcDoubleMI(doubleTable);
 
@@ -108,7 +107,8 @@ long MutualInformation::compute(const std::vector<std::pair<uint32_t, uint32_t>>
 
         for (id3 = id2 + 1; id3 < num_snps; id3++) {
             // Generate the contingency table of the 3-SNP
-            _fillTripleContTable(doubleTable, &tripleTable, ctrls[id3], cases[id3]);
+            _fillTripleContTable(doubleTable, &tripleTable, ctrls[id3],
+                                 cases[id3]);
 
             // Calculate the MI with the contingency table
             auxMIValue = _calcTripleMI(&tripleTable);
@@ -162,8 +162,10 @@ uint32_t popcount(uint32_t v) {
     return ((u + (u >> 3)) & 030707070707) % 63;
 }
 
-void MutualInformation::_fillDoubleContTable(std::vector<uint32_t> *s1_ctrls, std::vector<uint32_t> *s1_cases,
-                                             std::vector<uint32_t> *s2_ctrls, std::vector<uint32_t> *s2_cases,
+void MutualInformation::_fillDoubleContTable(std::vector<uint32_t> *s1_ctrls,
+                                             std::vector<uint32_t> *s1_cases,
+                                             std::vector<uint32_t> *s2_ctrls,
+                                             std::vector<uint32_t> *s2_cases,
                                              DoubleContTable *table) {
     for (int i = 0; i < _numEntriesCases; i++) {
         table->_cases00[i] = s1_cases[0][i] & s2_cases[0][i];
@@ -247,8 +249,10 @@ float MutualInformation::_calcDoubleMI(DoubleContTable *table) {
     return entX + entY - entAll;
 }
 
-void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable, TripleContTable *tripleTable,
-                                             std::vector<uint32_t> *s3_ctrls, std::vector<uint32_t> *s3_cases) {
+void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable,
+                                             TripleContTable *tripleTable,
+                                             std::vector<uint32_t> *s3_ctrls,
+                                             std::vector<uint32_t> *s3_cases) {
 
     uint32_t aux;
     uint32_t auxSNP3Value;
@@ -285,7 +289,6 @@ void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable, Tripl
         aux = doubleTable->_cases22[i] & auxSNP3Value;
         tripleTable->_cases[8] += popcount(aux);
 
-
         auxSNP3Value = s3_cases[1][i];
 
         aux = doubleTable->_cases00[i] & auxSNP3Value;
@@ -314,7 +317,6 @@ void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable, Tripl
 
         aux = doubleTable->_cases22[i] & auxSNP3Value;
         tripleTable->_cases[17] += popcount(aux);
-
 
         auxSNP3Value = s3_cases[2][i];
 
@@ -376,7 +378,6 @@ void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable, Tripl
         aux = doubleTable->_ctrls22[i] & auxSNP3Value;
         tripleTable->_ctrls[8] += popcount(aux);
 
-
         auxSNP3Value = s3_ctrls[1][i];
 
         aux = doubleTable->_ctrls00[i] & auxSNP3Value;
@@ -405,7 +406,6 @@ void MutualInformation::_fillTripleContTable(DoubleContTable *doubleTable, Tripl
 
         aux = doubleTable->_ctrls22[i] & auxSNP3Value;
         tripleTable->_ctrls[17] += popcount(aux);
-
 
         auxSNP3Value = s3_ctrls[2][i];
 

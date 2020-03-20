@@ -1,20 +1,18 @@
 /*
- * MPI3SNP ~ https://github.com/chponte/mpi3snp
+ * This file is part of Fiuncho.
  *
- * Copyright 2018 Christian Ponte
+ * Fiuncho is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Fiuncho is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -25,7 +23,7 @@
  * @brief Statistics class members implementation.
  */
 
-#include "Statistics.h"
+#include <fiuncho/utils/Statistics.h>
 #include <mpi.h>
 
 Statistics::Statistics() {
@@ -40,10 +38,10 @@ Statistics::~Statistics() {
     pthread_mutex_destroy(&timers_mutex);
 }
 
-void Statistics::Begin_timer(const std::string &label) {
+void Statistics::begin_timer(const std::string &label) {
     pthread_mutex_lock(&timers_mutex);
-    auto pos = Find_timer_label(label);
-    if (pos != timers.end()){
+    auto pos = find_timer_label(label);
+    if (pos != timers.end()) {
         pos = timers.erase(pos);
     }
     timers.insert(pos, std::make_tuple(label, MPI_Wtime(), true));
@@ -51,9 +49,9 @@ void Statistics::Begin_timer(const std::string &label) {
 }
 
 // TODO: raise exception if label does not exist
-double Statistics::End_timer(const std::string &label) {
+double Statistics::end_timer(const std::string &label) {
     pthread_mutex_lock(&timers_mutex);
-    auto pos = Find_timer_label(label);
+    auto pos = find_timer_label(label);
     if (pos != timers.end()) {
         double time;
         bool active;
@@ -72,10 +70,10 @@ double Statistics::End_timer(const std::string &label) {
 }
 
 // TODO: raise exception if label does not exist
-double Statistics::Get_timer(const std::string &label) {
+double Statistics::get_timer(const std::string &label) {
     double out = 0;
     pthread_mutex_lock(&timers_mutex);
-    auto pos = Find_timer_label(label);
+    auto pos = find_timer_label(label);
     if (pos != timers.end()) {
         out = std::get<1>(*pos);
     }
@@ -83,18 +81,19 @@ double Statistics::Get_timer(const std::string &label) {
     return out;
 }
 
-std::string Statistics::To_string() {
+std::string Statistics::str() {
     std::string output("Statistics\n");
-    for (auto item : timers){
+    for (auto item : timers) {
         if (!std::get<2>(item)) {
-            output += "\t" + std::get<0>(item) + ": " + std::to_string(std::get<1>(item)) + " seconds\n";
+            output += "\t" + std::get<0>(item) + ": " +
+                      std::to_string(std::get<1>(item)) + " seconds\n";
         }
     }
 
-    for (auto item : ints){
+    for (auto item : ints) {
         output += "\t" + item.first + ": " + std::to_string(item.second) + "\n";
     }
-    for (auto item : longs){
+    for (auto item : longs) {
         output += "\t" + item.first + ": " + std::to_string(item.second) + "\n";
     }
 
@@ -102,7 +101,7 @@ std::string Statistics::To_string() {
 }
 
 std::vector<std::tuple<std::string, double, bool>>::const_iterator
-Statistics::Find_timer_label(const std::string &label) {
+Statistics::find_timer_label(const std::string &label) {
     auto it = timers.begin();
     while (it < timers.end() && std::get<0>(*it).compare(label) != 0) {
         it++;

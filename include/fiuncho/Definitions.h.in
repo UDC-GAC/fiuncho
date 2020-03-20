@@ -1,0 +1,36 @@
+/*
+ * This file is part of Fiuncho.
+ *
+ * Fiuncho is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Fiuncho is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef FIUNCHO_DEFINITIONS_H
+#define FIUNCHO_DEFINITIONS_H
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+#define PROJECT_VERSION "@PROJECT_VERSION@"
+#define PROJECT_LICENSE                                                        \
+    "Copyright (C) 2018 Christian Ponte.\n\
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>.\n\
+This is free software, and you are welcome to redistribute it under \
+certain conditions.\n\
+This program comes with ABSOLUTELY NO WARRANTY."
+#define PROJECT_AUTHOR                                                         \
+    "Written by Christian Ponte. Special thanks to Jorge González and María J. \
+Martín.\n"
+#define PROJECT_DESCRIPTION "Description"
+#define PROJECT_HELP                                                           \
+    "@PROJECT_NAME@ online help: <https://github.com/chponte/fiuncho/>"
+
+#endif
