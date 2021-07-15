@@ -1,4 +1,0 @@
-Usage
-========
-
-Ejecuta el programa

@@ -1,11 +1,11 @@
 # This file is part of Fiuncho.
 # Copyright (C) 2020 by Christian Ponte
-# 
+#
 # Fiuncho is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # Fiuncho is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -16,44 +16,61 @@
 
 ################################# Dependencies #################################
 
+# System dependencies
 find_package(Sphinx)
-if (NOT DEFINED SPHINX_EXECUTABLE)
+if (NOT SPHINX_FOUND)
+	message(WARNING "Could not find Sphinx, docs target disabled")
     return()
 endif()
 
 find_package(Doxygen)
-if (NOT DEFINED DOXYGEN_EXECUTABLE)
+if (NOT DOXYGEN_FOUND)
+	message(WARNING "Could not find Doxygen, docs target disabled")
     return()
 endif()
 
-include(FetchContent)
-FetchContent_Declare(breathe
-    GIT_REPOSITORY https://github.com/michaeljones/breathe
-    GIT_TAG v4.14.1)
-FetchContent_GetProperties(breathe)
-if(NOT breathe_POPULATED)
-    FetchContent_Populate(breathe)
-endif()
+################################ Configuration  ################################
+
+# Configure Doxygen configuration file
+set(DOXYGEN_INPUT_DIR "../src ../include")
+set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+# Doxygen won't create this for us
+file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+
+set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
+set(SPHINX_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 ################################### Targets  ###################################
 
-# Doxygen
-set(DOXYGEN_INPUT_DIR 
-    "${Fiuncho_SOURCE_DIR}/src ${Fiuncho_SOURCE_DIR}/include")
-set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
-set(DOXYGEN_XML_OUTPUT_DIR "xml")
-configure_file(Doxyfile Doxyfile @ONLY)
-add_custom_target(doxygen
-    ALL
-    COMMAND ${DOXYGEN_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Building code documentation with Doxygen"
-    SOURCES Doxyfile)
+# Doxygen main output file
+set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/xml/index.xml)
+# Doxygen target
+add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    COMMENT "Generating doxygen xml"
+    VERBATIM)
+add_custom_target(doxygen ALL DEPENDS ${DOXYGEN_INDEX_FILE})
 
-# Sphynx
-configure_file(conf.py conf.py @ONLY)
-add_custom_target(docs
-    ALL
-    COMMAND ${SPHINX_EXECUTABLE} -q -b html -c ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/html
-    DEPENDS doxygen
-    COMMENT "Building HTML documentation with Sphinx")
+# Sphinx main output file
+set(SPHINX_INDEX_FILE ${SPHINX_BUILD}/index.html)
+# Sphinx target
+add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
+    COMMAND
+        ${SPHINX_EXECUTABLE} -b html
+        # Tell Breathe where to find the Doxygen output
+        -Dbreathe_projects.fiuncho=${DOXYGEN_OUTPUT_DIR}/xml
+    ${SPHINX_SOURCE} ${SPHINX_OUTPUT_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS
+    # Other docs files you want to track should go here (or in some variable)
+    ${CMAKE_CURRENT_SOURCE_DIR}/index.rst
+    ${DOXYGEN_INDEX_FILE}
+    MAIN_DEPENDENCY ${SPHINX_SOURCE}/conf.py
+    COMMENT "Generating documentation with Sphinx")
+add_custom_target(sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
+
+# Docs target
+add_custom_target(docs DEPENDS doxygen sphinx)

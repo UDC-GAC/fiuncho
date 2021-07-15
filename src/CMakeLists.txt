@@ -15,53 +15,87 @@
 
 ################################# Dependencies #################################
 
-# System dependencies
 find_package(Threads)
 if (NOT TARGET Threads::Threads)
-    return()
+    message(FATAL_ERROR "Missing threading library")
 endif()
 
 find_package(MPI)
 if (NOT TARGET MPI::MPI_CXX)
-    return()
+    message(FATAL_ERROR "Missing MPI library")
 endif()
 
-# External dependencies
-include(FetchContent)
-
-FetchContent_Declare(args
-    GIT_REPOSITORY https://github.com/Taywee/args
-    GIT_TAG 6.2.2)
-FetchContent_GetProperties(args)
-if(NOT args_POPULATED)
-    FetchContent_Populate(args)
-    add_subdirectory(${args_SOURCE_DIR} ${args_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+find_package(AVX)
+find_package(VectorLib)
 
 ################################# Definitions  #################################
 
 file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/fiuncho/*.h")
-set(SOURCE_LIST 
-    "${PROJECT_SOURCE_DIR}/src/dataset/Dataset.cpp"
-    "${PROJECT_SOURCE_DIR}/src/engine/Search.cpp"
-    "${PROJECT_SOURCE_DIR}/src/engine/cpu/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/engine/cpu/Cpu_node_information.cpp"
-    "${PROJECT_SOURCE_DIR}/src/engine/cpu/CPUEngine.cpp"
-    "${PROJECT_SOURCE_DIR}/src/engine/cpu/MutualInformation.cpp"
-    "${PROJECT_SOURCE_DIR}/src/utils/Arg_parser.cpp"
-    "${PROJECT_SOURCE_DIR}/src/utils/IOMpi.cpp"
-    "${PROJECT_SOURCE_DIR}/src/utils/Node_information.cpp"
-    "${PROJECT_SOURCE_DIR}/src/utils/Statistics.cpp")
+set(SOURCE_LIST_BASE
+    "${PROJECT_SOURCE_DIR}/src/cpu/base/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/base/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/base/MutualInformation.cpp")
+set(SOURCE_LIST_AVX2
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/MutualInformation.cpp")
+set(SOURCE_LIST_AVX512F256
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f256/MutualInformation.cpp")
+set(SOURCE_LIST_AVX512F512
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/MutualInformation.cpp")
 
 ################################### Targets  ###################################
 
-configure_file(${PROJECT_SOURCE_DIR}/include/fiuncho/Definitions.h.in 
-    ${PROJECT_BINARY_DIR}/include/fiuncho/Definitions.h)
+if(FORCE_AVX512F512)
+    if(NOT AVX512F_ENABLED)
+        message(FATAL_ERROR "FORCE_AVX512F512 is ${FORCE_AVX512F512}, "
+            "but AVX512F is not available")
+    endif()
+    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
+        message(FATAL_ERROR "FORCE_AVX512F512 is ${FORCE_AVX512F512}, "
+            "but there is no math vector library available")
+    endif()
+    add_library(libfiuncho ${SOURCE_LIST_AVX512F512})
+    target_compile_options(libfiuncho PUBLIC "-DALIGN=64")
+elseif(FORCE_AVX512F256)
+    if(NOT AVX512F_ENABLED)
+        message(FATAL_ERROR "FORCE_AVX512F256 is ${FORCE_AVX512F256}, "
+            "but AVX512F is not available")
+    endif()
+    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
+        message(FATAL_ERROR "FORCE_AVX512F256 is ${FORCE_AVX512F256}, "
+            "but there is no math vector library available")
+    endif()
+    add_library(libfiuncho ${SOURCE_LIST_AVX512F256})
+    target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
+elseif(FORCE_AVX2)
+    if(NOT AVX2_ENABLED)
+        message(FATAL_ERROR "FORCE_AVX2 is ${$FORCE_AVX2}, "
+            "but AVX2 is not available")
+    endif()
+    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
+        message(FATAL_ERROR "FORCE_AVX2 is ${FORCE_AVX2}, "
+            "but there is no math vector library available")
+    endif()
+    add_library(libfiuncho ${SOURCE_LIST_AVX2})
+    target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
+elseif(FORCE_NOAVX)
+    add_library(libfiuncho ${SOURCE_LIST_BASE})
+    target_compile_options(libfiuncho PUBLIC)
+else()
+    # Default behaviour: use AVX2 if its available
+    if (AVX2_ENABLED AND (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
+        add_library(libfiuncho ${SOURCE_LIST_AVX2})
+        target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
+    else()
+        add_library(libfiuncho ${SOURCE_LIST_BASE})
+        target_compile_options(libfiuncho PUBLIC)
+    endif()
+endif()
 
-add_library(fiuncho_lib ${SOURCE_LIST})
-
-target_include_directories(fiuncho_lib PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_BINARY_DIR}/include)
-
-target_link_libraries(fiuncho_lib PUBLIC args Threads::Threads MPI::MPI_CXX)
+target_include_directories(libfiuncho PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(libfiuncho PUBLIC Threads::Threads MPI::MPI_CXX)

@@ -20,69 +20,193 @@
  * @author Christian Ponte
  * @date 1 March 2018
  *
- * @brief Main program. Initializes the MPI environment, parses the command-line arguments, prints debug information if
- * necessary, instantiates the Search and terminates the execution.
+ * @brief Main program. Initializes the MPI environment, parses the command-line
+ * arguments, prints debug information if necessary, instantiates the Search and
+ * terminates the execution.
  */
 
-#include <mpi.h>
-#include <fiuncho/utils/IOMpi.h>
-#include <fiuncho/engine/Search.h>
-#include <fiuncho/utils/Node_information.h>
+#include <fiuncho/MPIEngine.h>
+#include <fiuncho/ThreadedSearch.h>
+#include <fstream>
+#include <iostream>
+#include <linux/limits.h>
+#include <tclap/CmdLine.h>
+#include <unistd.h>
 
-int main(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
+typedef struct {
+    std::string tped, tfam, output;
+    short order, threads;
+    unsigned int noutputs;
+} Arguments;
 
-    double stime, etime;
-
-    Arg_parser::Arguments arguments;
-    try {
-        arguments = Arg_parser(argc, argv).get_arguments();
-    } catch (const Arg_parser::Finalize &finalize) {
-        MPI_Finalize();
-        return 0;
-    }
-
-    // Set adequate information printing level
-    if (arguments.benchmarking) {
-        IOMpi::Instance().Set_print_level(IOMpi::B);
-    } else if (arguments.debug) {
-        IOMpi::Instance().Set_print_level(IOMpi::D);
-
-        // Print node information
-        auto info_list = Node_information::gather(0);
-        IOMpi::Instance().mprint<IOMpi::D>("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-        for (int i = 0; i < info_list.size(); i++) {
-            IOMpi::Instance().mprint<IOMpi::D>(info_list[i]->to_string());
-            if (i == info_list.size() - 1) {
-                IOMpi::Instance().mprint<IOMpi::D>("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n\n");
-            } else {
-                IOMpi::Instance().mprint<IOMpi::D>("---------------------------------------------\n");
-            }
-            delete info_list[i];
+Arguments read_arguments(int argc, char **argv)
+{
+    // Create TCLAP CmdLine
+    TCLAP::CmdLine cmd(
+        "Full documentation available at https://fiuncho.readthedocs.io/", ' ',
+        FIUNCHO_VERSION);
+    class : public TCLAP::StdOutput
+    {
+      public:
+        virtual void version(TCLAP::CmdLineInterface &c)
+        {
+            std::cout << "Fiuncho"
+                      << " " << c.getVersion() << " (" << FIUNCHO_COMMIT_HASH
+                      << ")\nBuilt with " << COMPILER_NAME << " ("
+                      << COMPILER_VERSION << ") using flags: " << COMPILER_FLAGS
+                      << "\n\n";
+            std::cout
+                << "Copyright (C) 2021 Christian Ponte, Universidade da "
+                   "Coruña\n"
+                   "This program comes with ABSOLUTELY NO WARRANTY. This is "
+                   "free\n"
+                   "software, and you are welcome to redistribute it under\n"
+                   "certain conditions. License available at:\n"
+                   "https://fiuncho.readthedocs.io/en/latest/license.html"
+                << std::endl;
         }
-        info_list.clear();
+
+        virtual void failure(TCLAP::CmdLineInterface &, TCLAP::ArgException &e)
+        {
+            throw e;
+        }
+    } cmd_output;
+    cmd.setOutput(&cmd_output);
+    class : public TCLAP::Constraint<short>
+    {
+        bool check(const short &order) const { return order > 1; }
+
+        std::string shortID() const { return "integer"; }
+
+        std::string description() const
+        {
+            return "order is equal or greater than 2";
+        }
+    } order_constraint;
+    TCLAP::ValueArg<short> order("o", "order",
+                                 "Order of the interactions to explore.", true,
+                                 0, &order_constraint);
+    cmd.add(order);
+    class : public TCLAP::Constraint<short>
+    {
+        bool check(const short &threads) const { return threads > 0; }
+
+        std::string shortID() const { return "integer"; }
+
+        std::string description() const { return "threads is greater than 0"; }
+    } threads_constraint;
+    TCLAP::ValueArg<short> threads("t", "threads",
+                                   "Number of threads to use. By default it "
+                                   "uses all cores available to the process.",
+                                   false, 0, &threads_constraint);
+    cmd.add(threads);
+    class : public TCLAP::Constraint<int>
+    {
+        bool check(const int &noutputs) const { return noutputs > 0; }
+
+        std::string shortID() const { return "integer"; }
+
+        std::string description() const { return "noutputs is greater than 0"; }
+    } noutputs_constraint;
+    TCLAP::ValueArg<int> noutputs("n", "noutputs",
+                                  "Number of combinations to output. By "
+                                  "default, it outputs 10 combinations.",
+                                  false, 10, &noutputs_constraint);
+    cmd.add(noutputs);
+    class : public TCLAP::Constraint<std::string>
+    {
+        bool check(const std::string &path) const
+        {
+            return access(path.c_str(), R_OK) == 0;
+        }
+
+        std::string shortID() const { return "path"; }
+
+        std::string description() const
+        {
+            return "path points to a readable file";
+        }
+    } infile_constraint;
+    TCLAP::UnlabeledValueArg<std::string> tped(
+        "tped", "Path to the input tped data file.", true, "",
+        &infile_constraint);
+    cmd.add(tped);
+    TCLAP::UnlabeledValueArg<std::string> tfam(
+        "tfam", "Tath to the input tfam data file.", true, "",
+        &infile_constraint);
+    cmd.add(tfam);
+    class : public TCLAP::Constraint<std::string>
+    {
+        bool check(const std::string &path) const
+        {
+            if (access(path.c_str(), F_OK) == 0) { // File exists
+                return access(path.c_str(), W_OK) == 0;
+            } else { // File does not exist
+                auto pos = path.find_last_of("/");
+                // If there are no forward slashes in the path, the path points
+                // to a file in the current directory
+                if (pos == std::string::npos) {
+                    char current_path[PATH_MAX + 1];
+                    if (getcwd(current_path, PATH_MAX + 1) == nullptr) {
+                        return false;
+                    }
+                    return access(current_path, W_OK) == 0;
+                } else {
+                    std::string parent_dir = path.substr(0, pos);
+                    return access(parent_dir.c_str(), W_OK) == 0;
+                }
+            }
+        }
+
+        std::string shortID() const { return "path"; }
+
+        std::string description() const
+        {
+            return "path points to a writeable location";
+        }
+    } outfile_constraint;
+    TCLAP::UnlabeledValueArg<std::string> output(
+        "output", "Path to the output file.", true, "", &outfile_constraint);
+    cmd.add(output);
+    // Read
+    Arguments args;
+    cmd.parse(argc, argv);
+    args.tped = tped.getValue();
+    args.tfam = tfam.getValue();
+    args.output = output.getValue();
+    args.order = order.getValue();
+    args.threads = threads.getValue();
+    args.noutputs = noutputs.getValue();
+    return args;
+}
+
+int main(int argc, char **argv)
+{
+    int rank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    try {
+        // Read arguments
+        auto args = read_arguments(argc, argv);
+        // Execute search
+        MPIEngine engine;
+        auto results = engine.run<ThreadedSearch>(
+            args.tped, args.tfam, args.order, args.noutputs, args.threads);
+        if (rank == 0) {
+            // Write results to the output file
+            std::ofstream of(args.output, std::ios::out);
+            for (auto r : results) {
+                of << r.str() << '\n';
+            }
+            of.close();
+        }
+    } catch (const TCLAP::ArgException &e) {
+        std::cerr << e.error() << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    } catch (const std::runtime_error &e) {
+        std::cerr << e.what() << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
-
-    /*get the startup time*/
-    stime = MPI_Wtime();
-
-    // Execute search
-    Statistics statistics;
-    Search *search = Search::Builder::build_from_args(arguments, statistics);
-    if (search == nullptr) {
-        MPI_Finalize();
-        return 0;
-    }
-    search->execute();
-
-    /*get the ending time*/
-    etime = MPI_Wtime();
-
-    delete search;
-    // Print runtime statistics to stdout
-    IOMpi::Instance().cprint<IOMpi::B>(statistics.str());
-    IOMpi::Instance().mprint<IOMpi::B>("Overall time: " + std::to_string(etime - stime) + " seconds\n");
-
     MPI_Finalize();
     return 0;
 }

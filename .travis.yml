@@ -1,6 +1,6 @@
 branches:
   only:
-    - master
+    - main
     - dev
 
 language: cpp
@@ -16,55 +16,28 @@ before_install:
   - sudo apt-get -q update
 
 script:
-  - mkdir -p build
-  - cd build
-  - cmake -D CMAKE_BUILD_TYPE=Release ..
-  - make fiuncho
-
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN  # Set in the settings page
-  keep_history: true
-  allow_empty_commit: true
-  local_dir: build/docs/html
-  on:
-    branch: master
+  - bash scripts/travis-build.sh
 
 # Build matrix
 jobs:
   include:
   # GCC + OpenMPI
-  - compiler: gcc
+  - env: CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8
     install:
-      - sudo apt-get -y install cmake libopenmpi2 libopenmpi-dev
+      - sudo apt-get -y install gcc-8 g++-8 cmake openmpi-bin libopenmpi2 libopenmpi-dev
     after_success: skip
   # GCC + MPICH
-  - compiler: gcc
+  - env: CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8
     install:
-      - sudo apt-get -y install cmake libmpich12 libmpich-dev
+      - sudo apt-get -y install gcc-8 g++-8 cmake mpich libmpich12 libmpich-dev
     after_success: skip
   # Clang + OpenMPI
-  - compiler: clang
-    env:
-      - OMPI_CC=clang
-      - OMPI_CXX=clang++
+  - env: CC=/usr/bin/clang-10 CXX=/usr/bin/clang++-10 OMPI_CC=$CC OMPI_CXX=$CXX
     install:
-      - sudo apt-get -y install cmake libopenmpi2 libopenmpi-dev
+      - sudo apt-get -y install clang-10 cmake openmpi-bin libopenmpi2 libopenmpi-dev
     after_success: skip
   # Clang + MPICH
-  - compiler: clang
-    env:
-      - MPICH_CC=clang
-      - MPICH_CXX=clang++
+  - env: CC=/usr/bin/clang-10 CXX=/usr/bin/clang++-10 MPICH_CC=$CC MPICH_CXX=$CXX
     install:
-      - sudo apt-get -y install cmake libmpich12 libmpich-dev
+      - sudo apt-get -y install clang-10 cmake mpich libmpich12 libmpich-dev
     after_success: skip
-  # Docs build and deploy
-  - install:
-      - sudo apt-get -y install cmake python3-sphinx python3-breathe doxygen
-    script:
-      - mkdir -p build
-      - cd build
-      - cmake -D CMAKE_BUILD_TYPE=Release ..
-      - make docs
