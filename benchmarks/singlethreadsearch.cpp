@@ -42,12 +42,22 @@ int repetitions;
 unsigned short thread_count;
 pthread_barrier_t barrier;
 
+/**
+ * @brief Single thread epistasis search. The method implements a depth-first
+ * strategy using a static stack.
+ *
+ * @param dataset Input data
+ * @param order Order of the search
+ * @param[out] maxarray List of combinations with the largest MI value
+ */
+
 void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
                   MaxArray<Result<uint32_t, float>> &maxarray)
 {
     // Auxiliary definitions
     const size_t cases_words = dataset[0].cases_words,
-                 ctrls_words = dataset[0].ctrls_words, snp_count = dataset.snps;
+                 ctrls_words = dataset[0].ctrls_words,
+                 snp_count = dataset.snps;
     // Define static structure for storing index combinations
     typedef struct {
         unsigned short size;
@@ -126,9 +136,20 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
     free(cbuffer);
 }
 
+/**
+ * @brief Meassure a single thread epistasis search. The thread is pinned to the
+ * cpu core selected.
+ *
+ * @param tped Input TPED file
+ * @param tfam Input TFAM file
+ * @param order Order of the search
+ * @param affinity Cpu core to which the thread will be pinned
+ * @param[out] elapsed_time Elapsed time during the search
+ */
+
 void search(const std::string tped, const std::string tfam,
-            const unsigned short order, double &elapsed_time,
-            const int affinity)
+            const unsigned short order, const int affinity,
+            double &elapsed_time)
 {
     // Pin thread to CPU core
     cpu_set_t cpuset;
@@ -146,10 +167,10 @@ void search(const std::string tped, const std::string tfam,
 #endif
     MaxArray<Result<uint32_t, float>> result(10);
 
-    struct timespec start, end;
     // Sync threads
     pthread_barrier_wait(&barrier);
     // Measure search time
+    struct timespec start, end;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
     stack_search(dataset, order, result);
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
@@ -179,11 +200,11 @@ int main(int argc, char *argv[])
 
     // Spawn thread_count - 1 threads
     for (size_t i = 1; i < affinity.size(); i++) {
-        threads.emplace_back(search, tped, tfam, order, std::ref(times[i]),
-                             affinity[i]);
+        threads.emplace_back(search, tped, tfam, order, affinity[i],
+                             std::ref(times[i]));
     }
     // Also use current thread
-    search(tped, tfam, order, times[0], affinity[0]);
+    search(tped, tfam, order, affinity[0], times[0]);
 
     // Finalization
     // Wait for completion
