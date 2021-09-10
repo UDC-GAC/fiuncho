@@ -33,14 +33,11 @@
 #include <fiuncho/utils/Result.h>
 #include <fiuncho/utils/StaticStack.h>
 #include <iostream>
-#include <thread>
-#include <time.h>
 
 #define BLOCK_SIZE (int)round(16384 / pow(3, order - 2))
 
 int repetitions;
 unsigned short thread_count;
-pthread_barrier_t barrier;
 
 /**
  * @brief Single thread epistasis search. The method implements a depth-first
@@ -151,14 +148,6 @@ void search(const std::string tped, const std::string tfam,
             const unsigned short order, const int affinity,
             double &elapsed_time)
 {
-    // Pin thread to CPU core
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(affinity, &cpuset);
-    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (rc != 0) {
-        std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-    }
     // Prepare input and output variables
 #ifdef ALIGN
     const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
@@ -166,16 +155,8 @@ void search(const std::string tped, const std::string tfam,
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
 #endif
     MaxArray<Result<uint32_t, float>> result(10);
-
-    // Sync threads
-    pthread_barrier_wait(&barrier);
     // Measure search time
-    struct timespec start, end;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
-    stack_search(dataset, order, result);
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-    elapsed_time =
-        end.tv_sec + end.tv_nsec * 1E-9 - start.tv_sec - start.tv_nsec * 1E-9;
+    elapsed_time = pinned_time(affinity, stack_search, dataset, order, result);
 }
 
 int main(int argc, char *argv[])
