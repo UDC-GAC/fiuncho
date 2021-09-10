@@ -36,9 +36,6 @@
 
 #define BLOCK_SIZE (int)round(16384 / pow(3, order - 2))
 
-int repetitions;
-unsigned short thread_count;
-
 /**
  * @brief Single thread epistasis search. The method implements a depth-first
  * strategy using a static stack.
@@ -169,10 +166,9 @@ int main(int argc, char *argv[])
     // Initialization
     // Arguments
     std::vector<int> affinity = split_into_ints(std::string(argv[1]), ',');
-    thread_count = affinity.size();
+    auto thread_count = affinity.size();
     const unsigned short order = atoi(argv[2]);
-    repetitions = atoi(argv[3]);
-    const std::string tped = argv[4], tfam = argv[5];
+    const std::string tped = argv[3], tfam = argv[4];
     // Variables
     pthread_barrier_init(&barrier, NULL, thread_count);
     std::vector<std::thread> threads;
