@@ -19,7 +19,7 @@
  * @file singlethreadsearch.cpp
  * @author Christian Ponte (christian.ponte@udc.es)
  * @brief Benchmark program for running single-thread epistasis searches
- * replicated on multiple (pinned) cores
+ * replicated on multiple (pinned) cores.
  * @date 2021-09-10
  */
 
@@ -34,8 +34,6 @@
 #include <fiuncho/utils/StaticStack.h>
 #include <iostream>
 
-#define BLOCK_SIZE (int)round(16384 / pow(3, order - 2))
-
 /**
  * @brief Single thread epistasis search. The method implements a depth-first
  * strategy using a static stack.
@@ -46,18 +44,18 @@
  */
 
 void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
-                  MaxArray<Result<uint32_t, float>> &maxarray)
+                  MaxArray<Result<int, float>> &maxarray)
 {
     // Auxiliary definitions
     const size_t cases_words = dataset[0].cases_words,
-                 ctrls_words = dataset[0].ctrls_words,
-                 snp_count = dataset.snps;
+                 ctrls_words = dataset[0].ctrls_words;
+    const int snp_count = dataset.snps;
     // Define static structure for storing index combinations
     typedef struct {
         unsigned short size;
-        uint32_t pos[];
+        int pos[];
     } Combination;
-    const size_t item_size = sizeof(Combination) + order * sizeof(uint32_t);
+    const size_t item_size = sizeof(Combination) + order * sizeof(int);
     // Use a stack to explore combination space
     StaticStack<Combination> stack(item_size, snp_count * order - 2);
     Combination *cbuffer = (Combination *)new char[item_size];
@@ -67,52 +65,42 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
         btables.emplace_back(o, cases_words, ctrls_words);
     }
     // Vector of contingency tables (and their SNPs) for block processing
-    Result<uint32_t, float> block[BLOCK_SIZE];
-    std::vector<ContingencyTable<uint32_t>> ctables;
-    for (auto i = 0; i < BLOCK_SIZE; i++) {
-        ctables.emplace_back(order, cases_words, ctrls_words);
-        block[i].combination.resize(order);
-    }
-
+    ContingencyTable<uint32_t> ctable(order, cases_words, ctrls_words);
     MutualInformation<float> mi(dataset.cases, dataset.ctrls);
+    Result<int, float> r;
+    r.combination.resize(order);
 
-    int i, j, l;
-    while (!stack.empty() || i < snp_count) {
-        // Fill ctables block
-        l = 0;
-        while (l < BLOCK_SIZE) {
-            // If the stack is empty read next pair and refill it
-            if (stack.empty()) {
-                // If there are no pairs left, exit
-                if (i >= snp_count) {
-                    break;
-                } else {
-                    cbuffer->size = 2;
-                    cbuffer->pos[0] = i;
-                    for (j = i + 1; j < snp_count; ++j) {
-                        cbuffer->pos[1] = j;
-                        stack.push(*cbuffer);
-                    }
-                    ++i;
-                    continue; // A pair can result in no triplets,
-                              // therefore we must check if the stack is
-                              // empty again
-                }
-            }
+    int i, j;
+    for (i = 0; i < snp_count; ++i) {
+        // Add all pairs starting with i to the stack
+        cbuffer->size = 2;
+        cbuffer->pos[0] = i;
+        for (j = i + 1; j < snp_count; ++j) {
+            cbuffer->pos[1] = j;
+            stack.push(*cbuffer);
+        }
+        while (!stack.empty()) {
             // Process the combination from the top of the stack
             stack.pop(*cbuffer);
             const auto &last = cbuffer->pos[cbuffer->size - 1];
+            // If the combination size is the same as the search order
             if (cbuffer->size == order) {
-                memcpy(block[l].combination.data(), cbuffer->pos, order * 4);
+                // Compute the contingency table
                 GenotypeTable<uint64_t>::combine_and_popcnt(
                     (order == 2) ? dataset[cbuffer->pos[0]] : btables.back(),
-                    dataset[last], ctables[l]);
-                ++l;
+                    dataset[last], ctable);
+                // Compute its MI value
+                r.val = mi.compute(ctable);
+                // Add to the array of results
+                memcpy(r.combination.data(), cbuffer->pos, order * sizeof(int));
+                maxarray.add(r);
             } else {
+                // Compute the genotype table
                 GenotypeTable<uint64_t>::combine(
                     (cbuffer->size == 2) ? dataset[cbuffer->pos[0]]
                                          : btables[cbuffer->size - 3],
                     dataset[last], btables[cbuffer->size - 2]);
+                // Add subsequent combinations to top of the stack
                 cbuffer->size += 1;
                 for (j = last + 1; j < snp_count; ++j) {
                     cbuffer->pos[cbuffer->size - 1] = j;
@@ -120,13 +108,7 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
                 }
             }
         }
-        // Compute MI for ctables in block
-        for (j = 0; j < l; ++j) {
-            block[j].val = mi.compute(ctables[j]);
-            maxarray.add(block[j]);
-        }
     }
-
     free(cbuffer);
 }
 
@@ -151,7 +133,7 @@ void search(const std::string tped, const std::string tfam,
 #else
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
 #endif
-    MaxArray<Result<uint32_t, float>> result(10);
+    MaxArray<Result<int, float>> result(10);
     // Measure search time
     elapsed_time = pinned_time(affinity, stack_search, dataset, order, result);
 }
@@ -166,7 +148,7 @@ int main(int argc, char *argv[])
     // Initialization
     // Arguments
     std::vector<int> affinity = split_into_ints(std::string(argv[1]), ',');
-    auto thread_count = affinity.size();
+    int thread_count = affinity.size();
     const unsigned short order = atoi(argv[2]);
     const std::string tped = argv[3], tfam = argv[4];
     // Variables
