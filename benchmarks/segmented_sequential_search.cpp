@@ -26,7 +26,6 @@
 
 #include "utils.h"
 #include <cmath>
-#include <cstdint>
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/algorithms/MutualInformation.h>
 #include <fiuncho/dataset/Dataset.h>
@@ -145,9 +144,9 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
  * @param[out] elapsed_time Elapsed time during the search
  */
 
-void search(const std::string tped, const std::string tfam,
-            const unsigned short order, const int affinity,
-            double &elapsed_time)
+std::vector<double> search(const std::string tped, const std::string tfam,
+                           const unsigned short order,
+                           const std::vector<int> &affinity)
 {
     // Prepare input and output variables
 #ifdef ALIGN
@@ -157,7 +156,8 @@ void search(const std::string tped, const std::string tfam,
 #endif
     MaxArray<Result<int, float>> result(10);
     // Measure search time
-    elapsed_time = pinned_time(affinity, stack_search, dataset, order, result);
+    return multithread_pinned_time(affinity, stack_search, dataset, order,
+                                   result);
 }
 
 int main(int argc, char *argv[])
@@ -166,37 +166,17 @@ int main(int argc, char *argv[])
         std::cout << argv[0] << " <THREADS> <ORDER> <TPED> <TFAM>" << std::endl;
         return 0;
     }
-
-    // Initialization
     // Arguments
     std::vector<int> affinity = split_into_ints(std::string(argv[1]), ',');
-    int thread_count = affinity.size();
     const unsigned short order = atoi(argv[2]);
     const std::string tped = argv[3], tfam = argv[4];
-    // Variables
-    pthread_barrier_init(&barrier, NULL, thread_count);
-    std::vector<std::thread> threads;
-    std::vector<double> times;
-    times.resize(thread_count);
-
-    // Spawn thread_count - 1 threads
-    for (size_t i = 1; i < affinity.size(); i++) {
-        threads.emplace_back(search, tped, tfam, order, affinity[i],
-                             std::ref(times[i]));
-    }
-    // Also use current thread
-    search(tped, tfam, order, affinity[0], times[0]);
-
-    // Finalization
-    // Wait for completion
-    for (auto &thread : threads) {
-        thread.join();
-    }
+    // Run benchmark
+    auto times = search(tped, tfam, order, affinity);
     // Print times
-    for (auto i = 0; i < thread_count - 1; i++) {
+    for (size_t i = 0; i < times.size() - 1; i++) {
         std::cout << times[i] << ',';
     }
-    std::cout << times[thread_count - 1] << '\n';
+    std::cout << times.back() << '\n';
 
     return 0;
 }
