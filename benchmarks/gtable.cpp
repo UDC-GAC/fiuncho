@@ -15,115 +15,87 @@
  * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**
+ * @file gtable.cpp
+ * @author Christian (christian.ponte@udc.es)
+ * @brief Benchmarking program for the genotype table computation function
+ * @date 20/09/2021
+ */
+
 #include "utils.h"
-#include <cstdint>
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/dataset/Dataset.h>
 #include <iostream>
-#include <pthread.h>
-#include <thread>
-#include <time.h>
 
-/*
- *  This benchmark programs calculates bit tables of a specific order following
- *  this process:
- *      1. Spawn as many threads as indicated
- *      2. Set processor affinity as indicated
- *      3. Initialize previous tables and such, and synchronize threads at the
- *         end of the initialization
- *      4. Warm up the CPU core by running an additional 10% of the total
- *         iterations
- *      5. Measure bit table computation time
- *      6. Print elapsed time on each thread
+/**
+ * @brief Genotype table calculation loop. The function repeats, for a given
+ * number of iterations, the computation of the genotype tables for {SNP_0, ...,
+ * SNP_o-2, SNP_i}, with o being the order of the genotype tables and i in [o-1,
+ * dataset.snps].
  *
- *  Program arguments:
- *      1: Comma-separated list of hardware threads to run on.
- *      2: Order of the tables to benchmark
- *      3: How many times the main loop is repeated
- *      4: Path to the TPED input file
- *      5: Path to the TFAM input file
+ * @param repetitions Number of iterations to loop
+ * @param dataset Input data
+ * @param order Order of the genotype tables computed
+ * @param prev Genotype table of combination {SNP_0, ..., SNP_o-2}
  */
 
-int repetitions;
-
-unsigned short thread_count;
-pthread_barrier_t barrier;
-
-void bench(const std::string tped, const std::string tfam,
-           const unsigned short order, double &elapsed_time, const int affinity)
+void loop_gtable(const int repetitions, const Dataset<uint64_t> &dataset,
+                 const unsigned short order,
+                 const GenotypeTable<uint64_t> &prev)
 {
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(affinity, &cpuset);
-    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (rc != 0) {
-        std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+    const size_t snp_count = dataset.snps;
+    GenotypeTable<uint64_t> gtable(order, dataset[0].cases_words,
+                                   dataset[0].ctrls_words);
+    for (auto reps = 0; reps < repetitions; reps++) {
+        for (size_t snp = order - 1; snp < snp_count; snp++) {
+            GenotypeTable<uint64_t>::combine(prev, dataset[snp], gtable);
+        }
     }
+}
 
+/**
+ * @brief Main benchmarking function. It precomputes the last genotype table
+ * corresponding to the combination {SNP_0, ..., SNP_o-2} and measures the
+ * elapsed time during the calculation of the genotype table of the combination
+ * {SNP_0, ..., SNP_o-2, SNP_i}, with o being the order of the genotype tables
+ * and i in [o-1, dataset.snps]. The function creates as many threads as CPU
+ * cores indicated in the affinity, and pins them to the specified allocation.
+ *
+ * @param tped TPED file path
+ * @param tfam TFAM file path
+ * @param order Order of the genotype tables computed by the benchmark
+ * @param affinity List of CPU cores to be used
+ * @param repetitions Number of repetitions to loop during the measurement
+ * @return A vector containing the elapsed times for each thread
+ */
+
+std::vector<double> bench_gtable(const std::string tped, const std::string tfam,
+                                 const unsigned short order,
+                                 const std::vector<int> &affinity,
+                                 const int repetitions)
+{
 #ifdef ALIGN
     const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
 #else
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
 #endif
-
-    const size_t snp_count = dataset.snps;
-    GenotypeTable<uint64_t> table(order, dataset[0].cases_words,
-                                  dataset[0].ctrls_words);
-    struct timespec start, end;
-
+    const size_t cases_words = dataset[0].cases_words,
+                 ctrls_words = dataset[1].ctrls_words;
     if (order == 2) {
-        // Main compute loop for order == 2
-        pthread_barrier_wait(&barrier);
-        // Warmup CPU adding an extra 10% of iterations before measuring time
-        for (auto reps = 0; reps < repetitions / 10; reps++) {
-            for (size_t snp = 1; snp < snp_count; snp++) {
-                GenotypeTable<uint64_t>::combine(dataset[0], dataset[snp],
-                                                 table);
-            }
-        }
-        // Measure time
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
-        for (auto reps = 0; reps < repetitions; reps++) {
-            for (size_t snp = 1; snp < snp_count; snp++) {
-                GenotypeTable<uint64_t>::combine(dataset[0], dataset[snp],
-                                                 table);
-            }
-        }
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-        elapsed_time = end.tv_sec + end.tv_nsec * 1E-9 - start.tv_sec -
-                       start.tv_nsec * 1E-9;
+        return multithread_pinned_time(affinity, loop_gtable, repetitions,
+                                       dataset, order, dataset[0]);
     } else {
         // Initialize previous bit tables outside of the main loop
-        std::vector<GenotypeTable<uint64_t>> prev_tables;
-        prev_tables.emplace_back(2, dataset[0].cases_words,
-                                 dataset[0].ctrls_words);
-        GenotypeTable<uint64_t>::combine(dataset[0], dataset[1],
-                                         prev_tables[0]);
+        std::vector<GenotypeTable<uint64_t>> gtables;
+        gtables.emplace_back(2, cases_words, ctrls_words);
+        GenotypeTable<uint64_t>::combine(dataset[0], dataset[1], gtables[0]);
         for (auto o = 3; o < order; o++) {
-            prev_tables.emplace_back(o, dataset[0].cases_words,
-                                     dataset[0].ctrls_words);
-            GenotypeTable<uint64_t>::combine(prev_tables[o - 3], dataset[o - 1],
-                                             prev_tables[o - 2]);
+            gtables.emplace_back(o, cases_words, ctrls_words);
+            GenotypeTable<uint64_t>::combine(gtables[o - 3], dataset[o - 1],
+                                             gtables[o - 2]);
         }
-        const GenotypeTable<uint64_t> &last = prev_tables[order - 3];
-        // Main compute loop for order > 2
-        pthread_barrier_wait(&barrier);
-        // Warmup CPU adding an extra 10% of iterations before measuring time
-        for (auto reps = 0; reps < repetitions / 10; reps++) {
-            for (size_t snp = order - 1; snp < snp_count; snp++) {
-                GenotypeTable<uint64_t>::combine(last, dataset[snp], table);
-            }
-        }
-        // Measure time
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
-        for (auto reps = 0; reps < repetitions; reps++) {
-            for (size_t snp = order - 1; snp < snp_count; snp++) {
-                GenotypeTable<uint64_t>::combine(last, dataset[snp], table);
-            }
-        }
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-        elapsed_time = end.tv_sec + end.tv_nsec * 1E-9 - start.tv_sec -
-                       start.tv_nsec * 1E-9;
+        return multithread_pinned_time(affinity, loop_gtable, repetitions,
+                                       dataset, order, gtables.back());
     }
 }
 
@@ -134,38 +106,18 @@ int main(int argc, char *argv[])
                   << std::endl;
         return 0;
     }
-
-    // Initialization
     // Arguments
     std::vector<int> affinity = split_into_ints(std::string(argv[1]), ',');
-    thread_count = affinity.size();
     const unsigned short order = atoi(argv[2]);
-    repetitions = atoi(argv[3]);
+    const int repetitions = atoi(argv[3]);
     const std::string tped = argv[4], tfam = argv[5];
-    // Variables
-    pthread_barrier_init(&barrier, NULL, thread_count);
-    std::vector<std::thread> threads;
-    std::vector<double> times;
-    times.resize(thread_count);
-
-    // Spawn thread_count - 1 threads
-    for (size_t i = 1; i < affinity.size(); i++) {
-        threads.emplace_back(bench, tped, tfam, order, std::ref(times[i]),
-                             affinity[i]);
-    }
-    // Also use current thread
-    bench(tped, tfam, order, times[0], affinity[0]);
-
-    // Finalization
-    // Wait for completion
-    for (auto &thread : threads) {
-        thread.join();
-    }
+    // Run benchmark
+    auto times = bench_gtable(tped, tfam, order, affinity, repetitions);
     // Print times
-    for (auto i = 0; i < thread_count - 1; i++) {
+    for (size_t i = 0; i < times.size() - 1; i++) {
         std::cout << times[i] << ',';
     }
-    std::cout << times[thread_count - 1] << '\n';
+    std::cout << times.back() << '\n';
 
     return 0;
 }

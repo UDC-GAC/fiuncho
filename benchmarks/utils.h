@@ -58,7 +58,7 @@ template <typename T, typename... Args>
 std::vector<double> multithread_pinned_time(const std::vector<int> &affinity,
                                             T func, Args &&...args)
 {
-    const unsigned int thread_count = affinity.size();
+    const int thread_count = affinity.size();
     pthread_barrier_t barrier;
     pthread_barrier_init(&barrier, NULL, thread_count);
     std::vector<std::thread> threads;

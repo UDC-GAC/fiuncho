@@ -28,7 +28,6 @@
 #include <fiuncho/algorithms/MutualInformation.h>
 #include <fiuncho/dataset/Dataset.h>
 #include <iostream>
-#include <thread>
 
 void loop_mi(const int repetitions,
              std::vector<ContingencyTable<uint32_t>> &ctables,
@@ -50,10 +49,9 @@ void loop_mi(const int repetitions,
  * @param tped TPED file path
  * @param tfam TFAM file path
  * @param order Order of the input contingency tables to the MI function
- * @param affinity CPU core to which the thread will be pinned
+ * @param affinity List of CPU cores to be used
  * @param repetitions Number of repetitions to loop during the measurement
- * @param[out] elapsed_time Elapsed time to compute the MI of the contingency
- * tables for the given number of repetitions.
+ * @return A vector containing the elapsed times for each thread
  */
 
 std::vector<double> bench_mi(const std::string tped, const std::string tfam,
@@ -108,7 +106,7 @@ int main(int argc, char *argv[])
     // Run benchmark
     auto times = bench_mi(tped, tfam, order, affinity, repetitions);
     // Print times
-    for (auto i = 0; i < times.size() - 1; ++i) {
+    for (size_t i = 0; i < times.size() - 1; ++i) {
         std::cout << times[i] << ',';
     }
     std::cout << times.back() << '\n';
