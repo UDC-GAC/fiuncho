@@ -16,11 +16,10 @@
  */
 
 /**
- * @file singlethreadsearch.cpp
- * @author Christian Ponte (christian.ponte@udc.es)
- * @brief Benchmark program for running single-thread epistasis searches
- * replicated on multiple (pinned) cores.
- * @date 2021-09-10
+ * @file nonsegmented_sequential_search.cpp
+ * @author Christian (christian.ponte@udc.es)
+ * @brief Benchmarking program for the sequential epistasis detection algorithm.
+ * @date 21/09/2021
  */
 
 #include "utils.h"
@@ -108,18 +107,20 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
             }
         }
     }
-    free(cbuffer);
+
+    delete[] cbuffer;
 }
 
 /**
- * @brief Meassure a single thread epistasis search. The thread is pinned to the
- * cpu core selected.
+ * @brief Main benchmarking function. It replicates the same epistasis search in
+ * each of the CPU cores indicated by the affinity vector, pinning a thread to
+ * each one.
  *
  * @param tped Input TPED file
  * @param tfam Input TFAM file
- * @param order Order of the search
- * @param affinity Cpu core to which the thread will be pinned
- * @param[out] elapsed_time Elapsed time during the search
+ * @param order Order of the epistasis search
+ * @param affinity List of CPU cores to be used
+ * @return A vector containing the elapsed times for each thread
  */
 
 std::vector<double> search(const std::string tped, const std::string tfam,
