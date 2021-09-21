@@ -54,11 +54,11 @@ float MutualInformation<float>::compute<uint32_t>(
     const size_t size = table.size;
     for (size_t i = 0; i < size; i++) {
         p_case = table.cases[i] * inv_inds;
-        if (table.cases[i] != 0.0f){
+        if (p_case != 0.0f){
             h_all -= p_case * logf(p_case);
         }
         p_ctrl = table.ctrls[i] * inv_inds;
-        if (table.ctrls[i] != 0.0f){
+        if (p_ctrl != 0.0f){
             h_all -= p_ctrl * logf(p_ctrl);
         }
         p_any = p_case + p_ctrl;
