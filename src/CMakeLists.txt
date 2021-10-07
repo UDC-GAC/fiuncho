@@ -32,21 +32,21 @@ find_package(VectorLib)
 
 file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/fiuncho/*.h")
 set(SOURCE_LIST_BASE
-    "${PROJECT_SOURCE_DIR}/src/cpu/base/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/base/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/base/MutualInformation.cpp")
+    "${PROJECT_SOURCE_DIR}/cpu/base/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/base/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/base/MutualInformation.cpp")
 set(SOURCE_LIST_AVX2
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/MutualInformation.cpp")
+    "${PROJECT_SOURCE_DIR}/cpu/avx2/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx2/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx2/MutualInformation.cpp")
 set(SOURCE_LIST_AVX512F256
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx2/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f256/MutualInformation.cpp")
+    "${PROJECT_SOURCE_DIR}/cpu/avx2/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx2/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx512f256/MutualInformation.cpp")
 set(SOURCE_LIST_AVX512F512
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/src/cpu/avx512f512/MutualInformation.cpp")
+    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/GenotypeTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/ContingencyTable.cpp"
+    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/MutualInformation.cpp")
 
 ################################### Targets  ###################################
 
