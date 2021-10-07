@@ -39,8 +39,7 @@ function(PREP_GTABLE_512)
     # Add genotype table constructor and combination function
     set(SOURCE_LIST
         "${PROJECT_SOURCE_DIR}/src/avx512f/gt_constructor.cpp"
-        "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp"
-        PARENT_SCOPE)
+        "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
         if(POPCNT_IMPL STREQUAL "harley-seal-512")
@@ -58,6 +57,8 @@ function(PREP_GTABLE_512)
         list(APPEND SOURCE_LIST
             "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_hs512.cpp")
     endif()
+    # Update SOURCE_LIST variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Define data alignment
     set(DATA_ALIGN 64 PARENT_SCOPE)
 endfunction()
@@ -71,8 +72,7 @@ function(PREP_GTABLE_256)
     # Add genotype table constructor and combination function
     set(SOURCE_LIST
         "${PROJECT_SOURCE_DIR}/src/avx2/gt_constructor.cpp"
-        "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp"
-        PARENT_SCOPE)
+        "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
         if(POPCNT_IMPL STREQUAL "native")
@@ -87,6 +87,8 @@ function(PREP_GTABLE_256)
         list(APPEND SOURCE_LIST
             "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native.cpp")
     endif()
+    # Update SOURCE_LIST variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Define data alignment
     set(DATA_ALIGN 32 PARENT_SCOPE)
 endfunction()
@@ -111,8 +113,6 @@ function(PREP_MI_512)
         message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but there is no "
             "vector math library")
     endif()
-    # Set SOURCE_LIST as variable in parent scope
-    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Add source files
     list(APPEND SOURCE_LIST
         "${PROJECT_SOURCE_DIR}/src/avx512f/ct_constructor.cpp"
@@ -120,6 +120,8 @@ function(PREP_MI_512)
         "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_512.cpp")
     # Define data alignment, overwrite if necessary
     set(DATA_ALIGN 64 PARENT_SCOPE)
+    # Update SOURCE_LIST variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
 endfunction()
 
 function(PREP_MI_256)
@@ -128,8 +130,6 @@ function(PREP_MI_256)
         message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but there is no "
             "vector math library")
     endif()
-    # Set SOURCE_LIST as variable in parent scope
-    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Add contingency table and MI constructors
     list(APPEND SOURCE_LIST
             "${PROJECT_SOURCE_DIR}/src/avx2/ct_constructor.cpp"
@@ -160,6 +160,8 @@ function(PREP_MI_256)
         list(APPEND SOURCE_LIST
             "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_256.cpp")
     endif()
+    # Update SOURCE_LIST variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Define data alignment only if its not defined (can only be 64, which
     # should be kept; 32, which is the same as here, or undefined)
     if(NOT DATA_ALIGN)
@@ -168,13 +170,13 @@ function(PREP_MI_256)
 endfunction()
 
 function(PREP_MI_64)
-    # Set SOURCE_LIST as variable in parent scope
-    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
     # Add contingency table and MI constructors, and MI compute function
     list(APPEND SOURCE_LIST
             "${PROJECT_SOURCE_DIR}/src/base/ct_constructor.cpp"
             "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp"
             "${PROJECT_SOURCE_DIR}/src/base/mi_compute.cpp")
+    # Update SOURCE_LIST variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
 endfunction()
 
 ################################# Definitions  #################################
