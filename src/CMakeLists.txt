@@ -75,17 +75,32 @@ function(PREP_GTABLE_256)
         "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
-        if(POPCNT_IMPL STREQUAL "native")
+        if(POPCNT_IMPL STREQUAL "cpu-256")
             list(APPEND SOURCE_LIST
-                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native.cpp")
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_avx2_cpu.cpp")
+        elseif(POPCNT_IMPL STREQUAL "harley-seal-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_avx2_hs.cpp")
+        elseif(POPCNT_IMPL STREQUAL "lookup-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_avx2_lu.cpp")
+        elseif(POPCNT_IMPL STREQUAL "lookup-original-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_avx2_lu_orig.cpp")
+        elseif(POPCNT_IMPL STREQUAL "popcnt-movdq-64")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native_movdq.cpp")
+        elseif(POPCNT_IMPL STREQUAL "popcnt-unrolled-errata-64")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native_unrolled_errata.cpp")
         else()
             message(FATAL_ERROR "Incorrect POPCNT_IMPL function: "
                 "${POPCNT_IMPL}")
         endif()
     else()
-        # By default use the native popcnt algorithm
+        # By default use the avx lookup algorithm
         list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native.cpp")
+            "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_avx2_lu.cpp")
     endif()
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
