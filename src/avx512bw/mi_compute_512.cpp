@@ -24,7 +24,6 @@
  * @brief MutualInformation class members implementation.
  */
 
-#include <cmath>
 #include <fiuncho/algorithms/MutualInformation.h>
 #include <immintrin.h>
 
@@ -34,19 +33,6 @@ __m512 _ZGVeN16v_logf(__m512 x);
 }
 inline __m512 _mm512_log_ps(__m512 x) noexcept { return _ZGVeN16v_logf(x); }
 #endif
-
-template <>
-MutualInformation<float>::MutualInformation(unsigned int num_cases,
-                                            unsigned int num_ctrls)
-{
-    inv_inds = 1.0 / (num_cases + num_ctrls);
-
-    float p = num_cases * inv_inds;
-    h_y = p * logf(p);
-
-    p = num_ctrls * inv_inds;
-    h_y += p * logf(p);
-}
 
 template <>
 template <>

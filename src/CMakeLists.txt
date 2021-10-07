@@ -28,74 +28,210 @@ endif()
 find_package(AVX)
 find_package(VectorLib)
 
+############################### Helper functions  ##############################
+
+function(PREP_GTABLE_512)
+    # Check if AVX512BW is supported
+    if (NOT AVX512BW_ENABLED)
+        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+            "AVX512BW vector extension is not available")
+    endif()
+    # Add genotype table constructor and combination function
+    set(SOURCE_LIST
+        "${PROJECT_SOURCE_DIR}/src/avx512f/gt_constructor.cpp"
+        "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp"
+        PARENT_SCOPE)
+    # Select contingency table calculation implementation
+    if(POPCNT_IMPL)
+        if(POPCNT_IMPL STREQUAL "harley-seal-512")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_hs512.cpp")
+        elseif(POPCNT_IMPL STREQUAL "shuffle-512")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_shuf512.cpp")
+        else()
+            message(FATAL_ERROR "Incorrect POPCNT_IMPL function: "
+                "${POPCNT_IMPL}")
+        endif()
+    else()
+        # By default use the Harley-Seal 512-bit popcnt algorithm
+        list(APPEND SOURCE_LIST
+            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_hs512.cpp")
+    endif()
+    # Define data alignment
+    set(DATA_ALIGN 64 PARENT_SCOPE)
+endfunction()
+
+function(PREP_GTABLE_256)
+    # Check if AVX2 is supported
+    if (NOT AVX2_ENABLED)
+        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but the "
+            "AVX2 vector extension is not available")
+    endif()
+    # Add genotype table constructor and combination function
+    set(SOURCE_LIST
+        "${PROJECT_SOURCE_DIR}/src/avx2/gt_constructor.cpp"
+        "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp"
+        PARENT_SCOPE)
+    # Select contingency table calculation implementation
+    if(POPCNT_IMPL)
+        if(POPCNT_IMPL STREQUAL "native")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native.cpp")
+        else()
+            message(FATAL_ERROR "Incorrect POPCNT_IMPL function: "
+                "${POPCNT_IMPL}")
+        endif()
+    else()
+        # By default use the native popcnt algorithm
+        list(APPEND SOURCE_LIST
+            "${PROJECT_SOURCE_DIR}/src/avx2/gt_popcnt_native.cpp")
+    endif()
+    # Define data alignment
+    set(DATA_ALIGN 32 PARENT_SCOPE)
+endfunction()
+
+function(PREP_GTABLE_64)
+    # Add genotype table constructor and combination function
+    set(SOURCE_LIST
+        "${PROJECT_SOURCE_DIR}/src/base/gt_constructor.cpp"
+        "${PROJECT_SOURCE_DIR}/src/base/gt_combine.cpp"
+        "${PROJECT_SOURCE_DIR}/src/base/gt_popcnt.cpp"
+        PARENT_SCOPE)
+endfunction()
+
+function(PREP_MI_512)
+    # Check if AVX512BW is supported
+    if (NOT AVX512BW_ENABLED)
+        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+            "AVX512BW vector extension is not available")
+    endif()
+    # Check if a math vector library is available
+    if (NOT (LIBMVEC_AVAILABLE OR SVML_AVAILABLE))
+        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but there is no "
+            "vector math library")
+    endif()
+    # Set SOURCE_LIST as variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
+    # Add source files
+    list(APPEND SOURCE_LIST
+        "${PROJECT_SOURCE_DIR}/src/avx512f/ct_constructor.cpp"
+        "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp"
+        "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_512.cpp")
+    # Define data alignment, overwrite if necessary
+    set(DATA_ALIGN 64 PARENT_SCOPE)
+endfunction()
+
+function(PREP_MI_256)
+    # Check if a math vector library is available
+    if (NOT (LIBMVEC_AVAILABLE OR SVML_AVAILABLE))
+        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but there is no "
+            "vector math library")
+    endif()
+    # Set SOURCE_LIST as variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
+    # Add contingency table and MI constructors
+    list(APPEND SOURCE_LIST
+            "${PROJECT_SOURCE_DIR}/src/avx2/ct_constructor.cpp"
+            "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp")
+    # Select MI implementation
+    if(MI_IMPL)
+        if(MI_IMPL STREQUAL "if-nomask")
+            # Check if AVX2 is supported
+            if (NOT AVX2_ENABLED)
+                message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but the "
+                    "AVX2 vector extension is not available")
+            endif()
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/mi_compute.cpp")
+        elseif(MI_IMPL STREQUAL "if-mask")
+            # Check if AVX512BW is supported
+            if (NOT AVX512BW_ENABLED)
+                message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+                    "AVX512BW vector extension is not available")
+            endif()
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_256.cpp")
+        else()
+            message(FATAL_ERROR "Incorrect MI_IMPL function: ${MI_IMPL}")
+        endif()
+    else()
+        # By default use the if-mask implementation
+        list(APPEND SOURCE_LIST
+            "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_256.cpp")
+    endif()
+    # Define data alignment only if its not defined (can only be 64, which
+    # should be kept; 32, which is the same as here, or undefined)
+    if(NOT DATA_ALIGN)
+        set(DATA_ALIGN 32 PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(PREP_MI_64)
+    # Set SOURCE_LIST as variable in parent scope
+    set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
+    # Add contingency table and MI constructors, and MI compute function
+    list(APPEND SOURCE_LIST
+            "${PROJECT_SOURCE_DIR}/src/base/ct_constructor.cpp"
+            "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp"
+            "${PROJECT_SOURCE_DIR}/src/base/mi_compute.cpp")
+endfunction()
+
 ################################# Definitions  #################################
 
 file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/fiuncho/*.h")
-set(SOURCE_LIST_BASE
-    "${PROJECT_SOURCE_DIR}/cpu/base/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/base/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/base/MutualInformation.cpp")
-set(SOURCE_LIST_AVX2
-    "${PROJECT_SOURCE_DIR}/cpu/avx2/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx2/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx2/MutualInformation.cpp")
-set(SOURCE_LIST_AVX512F256
-    "${PROJECT_SOURCE_DIR}/cpu/avx2/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx2/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx512f256/MutualInformation.cpp")
-set(SOURCE_LIST_AVX512F512
-    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/GenotypeTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/ContingencyTable.cpp"
-    "${PROJECT_SOURCE_DIR}/cpu/avx512f512/MutualInformation.cpp")
 
-################################### Targets  ###################################
-
-if(FORCE_AVX512F512)
-    if(NOT AVX512F_ENABLED)
-        message(FATAL_ERROR "FORCE_AVX512F512 is ${FORCE_AVX512F512}, "
-            "but AVX512F is not available")
-    endif()
-    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
-        message(FATAL_ERROR "FORCE_AVX512F512 is ${FORCE_AVX512F512}, "
-            "but there is no math vector library available")
-    endif()
-    add_library(libfiuncho ${SOURCE_LIST_AVX512F512})
-    target_compile_options(libfiuncho PUBLIC "-DALIGN=64")
-elseif(FORCE_AVX512F256)
-    if(NOT AVX512F_ENABLED)
-        message(FATAL_ERROR "FORCE_AVX512F256 is ${FORCE_AVX512F256}, "
-            "but AVX512F is not available")
-    endif()
-    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
-        message(FATAL_ERROR "FORCE_AVX512F256 is ${FORCE_AVX512F256}, "
-            "but there is no math vector library available")
-    endif()
-    add_library(libfiuncho ${SOURCE_LIST_AVX512F256})
-    target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
-elseif(FORCE_AVX2)
-    if(NOT AVX2_ENABLED)
-        message(FATAL_ERROR "FORCE_AVX2 is ${$FORCE_AVX2}, "
-            "but AVX2 is not available")
-    endif()
-    if (NOT (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
-        message(FATAL_ERROR "FORCE_AVX2 is ${FORCE_AVX2}, "
-            "but there is no math vector library available")
-    endif()
-    add_library(libfiuncho ${SOURCE_LIST_AVX2})
-    target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
-elseif(FORCE_NOAVX)
-    add_library(libfiuncho ${SOURCE_LIST_BASE})
-    target_compile_options(libfiuncho PUBLIC)
-else()
-    # Default behaviour: use AVX2 if its available
-    if (AVX2_ENABLED AND (SVML_AVAILABLE OR LIBMVEC_AVAILABLE))
-        add_library(libfiuncho ${SOURCE_LIST_AVX2})
-        target_compile_options(libfiuncho PUBLIC "-DALIGN=32")
+if(GTABLE_OP_WIDTH)
+    if(GTABLE_OP_WIDTH EQUAL 512)
+        PREP_GTABLE_512()
+    elseif(GTABLE_OP_WIDTH EQUAL 256)
+        PREP_GTABLE_256()
+    elseif(GTABLE_OP_WIDTH EQUAL 64)
+        PREP_GTABLE_64()
     else()
-        add_library(libfiuncho ${SOURCE_LIST_BASE})
-        target_compile_options(libfiuncho PUBLIC)
+        message(FATAL_ERROR "Incorrect GTABLE_OP_WIDTH of ${GTABLE_OP_WIDTH}")
+    endif()
+else()
+    # By default use the highest width available
+    if(AVX512BW_ENABLED)
+        PREP_GTABLE_512()
+    elseif(AVX2_ENABLED)
+        PREP_GTABLE_256()
+    else()
+        PREP_GTABLE_64()
     endif()
 endif()
 
+if(MI_OP_WIDTH)
+    if(MI_OP_WIDTH EQUAL 512)
+        PREP_MI_512()
+    elseif(MI_OP_WIDTH EQUAL 256)
+        PREP_MI_256()
+    elseif(MI_OP_WIDTH EQUAL 64)
+        PREP_MI_64()
+    else()
+        message(FATAL_ERROR "Incorrect MI_OP_WIDTH of ${GTABLE_OP_WIDTH}")
+    endif()
+else()
+    # By default use the highest width available
+    if (LIBMVEC_AVAILABLE OR SVML_AVAILABLE)
+        if(AVX512BW_ENABLED)
+            PREP_MI_512()
+        elseif(AVX2_ENABLED)
+            PREP_MI_256()
+        else()
+            PREP_MI_64()
+        endif()
+    else()
+        PREP_MI_64()
+    endif()
+endif()
+
+################################### Targets  ###################################
+
+add_library(libfiuncho ${SOURCE_LIST})
+if(DATA_ALIGN)
+    target_compile_options(libfiuncho PUBLIC "-DALIGN=${DATA_ALIGN}")
+endif()
 target_include_directories(libfiuncho PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(libfiuncho PUBLIC Threads::Threads MPI::MPI_CXX)

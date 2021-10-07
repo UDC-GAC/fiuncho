@@ -66,5 +66,19 @@ if (NOT DEFINED AVX512F_ENABLED)
     set_property(CACHE AVX512F_ENABLED PROPERTY TYPE BOOL)
 endif()
 
+if (NOT DEFINED AVX512BW_ENABLED)
+    set(AVX512BW_CODE "
+        #include <immintrin.h>
+
+        int main()
+        {
+            __m512i a = _mm512_abs_epi16(_mm512_setzero_epi32());
+            return 0;
+        }
+    ")
+    check_cxx_source_compiles("${AVX512BW_CODE}" AVX512BW_ENABLED)
+    set_property(CACHE AVX512BW_ENABLED PROPERTY TYPE BOOL)
+endif()
+
 set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_SAVE})
 unset(CMAKE_REQUIRED_FLAGS_SAVE)

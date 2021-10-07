@@ -24,7 +24,6 @@
  * @brief MutualInformation class members implementation.
  */
 
-#include <cmath>
 #include <fiuncho/algorithms/MutualInformation.h>
 #include <immintrin.h>
 
@@ -36,50 +35,39 @@ inline __m256 _mm256_log_ps(__m256 x) noexcept { return _ZGVdN8v_logf(x); }
 #endif
 
 template <>
-MutualInformation<float>::MutualInformation(unsigned int num_cases,
-                                            unsigned int num_ctrls)
-{
-    inv_inds = 1.0 / (num_cases + num_ctrls);
-
-    float p = num_cases * inv_inds;
-    h_y = p * logf(p);
-
-    p = num_ctrls * inv_inds;
-    h_y += p * logf(p);
-}
-
-template <>
 template <>
 float MutualInformation<float>::compute<uint32_t>(
     const ContingencyTable<uint32_t> &table) const noexcept
 {
     const __m256 ones = _mm256_set1_ps(1.0), ii = _mm256_set1_ps(inv_inds);
+
+    __m256 y0, y1, y2, y3, y4, y5;
+
     __m256 h_x = _mm256_setzero_ps(), h_all = _mm256_setzero_ps();
-
-    __m256i y0;
-    __m256 y1, y2, y3, y4;
-    __mmask8 mask1, mask2, mask3;
     for (size_t i = 0; i < table.size; i += 8) {
-        y0 = _mm256_load_si256((__m256i *)(table.cases + i));
-        mask1 =
-            _mm256_cmp_epi32_mask(y0, _mm256_setzero_si256(), _MM_CMPINT_NE);
-        y1 = _mm256_cvtepi32_ps(y0);
-        y2 = _mm256_mul_ps(y1, ii);
-        y3 = _mm256_log_ps(_mm256_mask_blend_ps(mask1, ones, y2));
-        h_all = _mm256_fmadd_ps(y2, y3, h_all);
-
-        y0 = _mm256_load_si256((__m256i *)(table.ctrls + i));
-        mask2 =
-            _mm256_cmp_epi32_mask(y0, _mm256_setzero_si256(), _MM_CMPINT_NE);
-        y1 = _mm256_cvtepi32_ps(y0);
-        y3 = _mm256_mul_ps(y1, ii);
-        y4 = _mm256_log_ps(_mm256_mask_blend_ps(mask2, ones, y3));
+        y0 = _mm256_cvtepi32_ps(
+            _mm256_load_si256((const __m256i *)(table.cases + i)));
+        y3 = _mm256_mul_ps(y0, ii);
+        // Identify values different from 0
+        y1 = _mm256_cmp_ps(y0, _mm256_setzero_ps(), _CMP_NEQ_OQ);
+        // Replace 0's with 1's
+        y4 = _mm256_log_ps(_mm256_blendv_ps(ones, y3, y1));
         h_all = _mm256_fmadd_ps(y3, y4, h_all);
 
-        mask3 = _kor_mask8(mask1, mask2);
-        y1 = _mm256_add_ps(y2, y3);
-        y2 = _mm256_log_ps(_mm256_mask_blend_ps(mask3, ones, y1));
-        h_x = _mm256_fmadd_ps(y1, y2, h_x);
+        y0 = _mm256_cvtepi32_ps(
+            _mm256_load_si256((const __m256i *)(table.ctrls + i)));
+        y4 = _mm256_mul_ps(y0, ii);
+        // Identify values different from 0
+        y2 = _mm256_cmp_ps(y0, _mm256_setzero_ps(), _CMP_NEQ_OQ);
+        // Replace 0's with 1's
+        y5 = _mm256_log_ps(_mm256_blendv_ps(ones, y4, y2));
+        h_all = _mm256_fmadd_ps(y4, y5, h_all);
+        y5 = _mm256_add_ps(y3, y4);
+        // Merge previous masks
+        y1 = _mm256_or_ps(y1, y2);
+        // Replace 0's with 1's
+        y3 = _mm256_log_ps(_mm256_blendv_ps(ones, y5, y1));
+        h_x = _mm256_fmadd_ps(y5, y3, h_x);
     }
 
     __m256 h_sum = _mm256_hadd_ps(h_all, h_x);
