@@ -23,11 +23,11 @@ inline void combine_aux(const uint64_t *gt_tbl1, const size_t gt_size,
                 __m512i z5 = _mm512_and_si512(z0, z2);
                 __m512i z6 = _mm512_and_si512(z0, z3);
                 _mm512_store_si512(
-                    (__m512i *)(gt_tbl3 + ((i + j) * 3 + 0) * words + k), z4);
+                    (__m512i *)(gt_tbl3 + ((i + 0) * 3 + j) * words + k), z4);
                 _mm512_store_si512(
-                    (__m512i *)(gt_tbl3 + ((i + j) * 3 + 1) * words + k), z5);
+                    (__m512i *)(gt_tbl3 + ((i + 1) * 3 + j) * words + k), z5);
                 _mm512_store_si512(
-                    (__m512i *)(gt_tbl3 + ((i + j) * 3 + 2) * words + k), z6);
+                    (__m512i *)(gt_tbl3 + ((i + 2) * 3 + j) * words + k), z6);
             }
         }
     }

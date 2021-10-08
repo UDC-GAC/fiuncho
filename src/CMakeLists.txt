@@ -44,10 +44,28 @@ function(PREP_GTABLE_512)
     if(POPCNT_IMPL)
         if(POPCNT_IMPL STREQUAL "harley-seal-512")
             list(APPEND SOURCE_LIST
-                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_hs512.cpp")
-        elseif(POPCNT_IMPL STREQUAL "shuffle-512")
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_hs.cpp")
+        elseif(POPCNT_IMPL STREQUAL "lookup-512")
             list(APPEND SOURCE_LIST
                 "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_shuf512.cpp")
+        elseif(POPCNT_IMPL STREQUAL "cpu-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx2_cpu.cpp")
+        elseif(POPCNT_IMPL STREQUAL "harley-seal-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx2_hs.cpp")
+        elseif(POPCNT_IMPL STREQUAL "lookup-original-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx2_lu_orig.cpp")
+        elseif(POPCNT_IMPL STREQUAL "lookup-256")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx2_lu.cpp")
+        elseif(POPCNT_IMPL STREQUAL "popcnt-movdq-64")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_native_movdq.cpp")
+        elseif(POPCNT_IMPL STREQUAL "popcnt-unrolled-errata-64")
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_native_unrolled_errata.cpp")
         else()
             message(FATAL_ERROR "Incorrect POPCNT_IMPL function: "
                 "${POPCNT_IMPL}")
@@ -55,7 +73,7 @@ function(PREP_GTABLE_512)
     else()
         # By default use the Harley-Seal 512-bit popcnt algorithm
         list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_hs512.cpp")
+            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_hs.cpp")
     endif()
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
