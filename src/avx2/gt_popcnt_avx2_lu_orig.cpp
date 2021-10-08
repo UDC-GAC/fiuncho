@@ -27,9 +27,9 @@ inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t gt_size,
                 __m256i local = _mm256_setzero_si256();
                 for (l = 0; l < 255 / 8 && k < words; ++l, k += 4) {
                     const __m256i o1 =
-                        _mm256_load_si256((__m256i *)(gt_tbl1 + k));
+                        _mm256_load_si256((__m256i *)(gt_tbl1 + i * words + k));
                     const __m256i o2 =
-                        _mm256_load_si256((__m256i *)(gt_tbl2 + k));
+                        _mm256_load_si256((__m256i *)(gt_tbl2 + j * words + k));
                     const __m256i vec = _mm256_and_si256(o1, o2);
                     const __m256i lo = _mm256_and_si256(vec, low_mask);
                     const __m256i hi =

@@ -38,26 +38,30 @@ inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t gt_size,
             __m256i acc = _mm256_setzero_si256();
             for (k = 0; k + 32 <= words; k += 32) {
                 __m256i local = _mm256_setzero_si256();
-                iter(gt_tbl1 + k + 0, gt_tbl2 + k + 0, lookup, low_mask, local);
-                iter(gt_tbl1 + k + 4, gt_tbl2 + k + 4, lookup, low_mask, local);
-                iter(gt_tbl1 + k + 8, gt_tbl2 + k + 8, lookup, low_mask, local);
-                iter(gt_tbl1 + k + 12, gt_tbl2 + k + 12, lookup, low_mask,
-                     local);
-                iter(gt_tbl1 + k + 16, gt_tbl2 + k + 16, lookup, low_mask,
-                     local);
-                iter(gt_tbl1 + k + 20, gt_tbl2 + k + 20, lookup, low_mask,
-                     local);
-                iter(gt_tbl1 + k + 24, gt_tbl2 + k + 24, lookup, low_mask,
-                     local);
-                iter(gt_tbl1 + k + 28, gt_tbl2 + k + 28, lookup, low_mask,
-                     local);
+                iter(gt_tbl1 + i * words + k + 0, gt_tbl2 + j * words + k + 0,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 4, gt_tbl2 + j * words + k + 4,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 8, gt_tbl2 + j * words + k + 8,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 12, gt_tbl2 + j * words + k + 12,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 16, gt_tbl2 + j * words + k + 16,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 20, gt_tbl2 + j * words + k + 20,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 24, gt_tbl2 + j * words + k + 24,
+                     lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k + 28, gt_tbl2 + j * words + k + 28,
+                     lookup, low_mask, local);
                 acc = _mm256_add_epi64(
                     acc, _mm256_sad_epu8(local, _mm256_setzero_si256()));
             }
 
             __m256i local = _mm256_setzero_si256();
             for (; k < words; k += 4) {
-                iter(gt_tbl1 + k, gt_tbl2 + k, lookup, low_mask, local);
+                iter(gt_tbl1 + i * words + k, gt_tbl2 + j * words + k, lookup,
+                     low_mask, local);
             }
             acc = _mm256_add_epi64(
                 acc, _mm256_sad_epu8(local, _mm256_setzero_si256()));

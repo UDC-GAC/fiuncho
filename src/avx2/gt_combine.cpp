@@ -23,15 +23,15 @@ void GenotypeTable<uint64_t>::combine(const GenotypeTable<uint64_t> &t1,
                 __m256i y5 = _mm256_and_si256(y0, y2);
                 __m256i y6 = _mm256_and_si256(y0, y3);
                 _mm256_store_si256(
-                    (__m256i *)(out.cases + ((i + j) * 3 + 0) * t1.cases_words +
+                    (__m256i *)(out.cases + ((i + 0) * 3 + j) * t1.cases_words +
                                 k),
                     y4);
                 _mm256_store_si256(
-                    (__m256i *)(out.cases + ((i + j) * 3 + 1) * t1.cases_words +
+                    (__m256i *)(out.cases + ((i + 1) * 3 + j) * t1.cases_words +
                                 k),
                     y5);
                 _mm256_store_si256(
-                    (__m256i *)(out.cases + ((i + j) * 3 + 2) * t1.cases_words +
+                    (__m256i *)(out.cases + ((i + 2) * 3 + j) * t1.cases_words +
                                 k),
                     y6);
             }
@@ -53,15 +53,15 @@ void GenotypeTable<uint64_t>::combine(const GenotypeTable<uint64_t> &t1,
                 __m256i y5 = _mm256_and_si256(y0, y2);
                 __m256i y6 = _mm256_and_si256(y0, y3);
                 _mm256_store_si256(
-                    (__m256i *)(out.ctrls + ((i + j) * 3 + 0) * t1.ctrls_words +
+                    (__m256i *)(out.ctrls + ((i + 0) * 3 + j) * t1.ctrls_words +
                                 k),
                     y4);
                 _mm256_store_si256(
-                    (__m256i *)(out.ctrls + ((i + j) * 3 + 1) * t1.ctrls_words +
+                    (__m256i *)(out.ctrls + ((i + 1) * 3 + j) * t1.ctrls_words +
                                 k),
                     y5);
                 _mm256_store_si256(
-                    (__m256i *)(out.ctrls + ((i + j) * 3 + 2) * t1.ctrls_words +
+                    (__m256i *)(out.ctrls + ((i + 2) * 3 + j) * t1.ctrls_words +
                                 k),
                     y6);
             }
