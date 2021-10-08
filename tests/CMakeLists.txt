@@ -66,7 +66,10 @@ create_gtest(test_dataset dataset.cpp test_dataset_bin
     test_dataset_bin
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tped"
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tfam")
-create_gtest(test_genotypetable genotypetable.cpp test_genotypetable_bin)
+create_gtest(test_genotypetable genotypetable.cpp test_genotypetable_bin
+    test_genotypetable_bin
+    "${CMAKE_CURRENT_LIST_DIR}/data/test.tped"
+    "${CMAKE_CURRENT_LIST_DIR}/data/test.tfam")
 create_gtest(test_mi mi.cpp test_mi_bin)
 create_gtest(test_threadedsearch threadedsearch.cpp test_threadedsearch_bin
     test_threadedsearch_bin

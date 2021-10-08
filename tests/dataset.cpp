@@ -34,19 +34,18 @@ TEST(DatasetTest, Dataset)
 #endif
 
     EXPECT_EQ(10, dataset.snps);
-    EXPECT_EQ(600, dataset.cases);
-    EXPECT_EQ(1300, dataset.ctrls);
-    EXPECT_EQ(1900, dataset.cases + dataset.ctrls);
+    EXPECT_EQ(9000, dataset.cases);
+    EXPECT_EQ(9800, dataset.ctrls);
 
 #if ALIGN == 64
-    EXPECT_EQ(16, dataset[0].cases_words);
-    EXPECT_EQ(24, dataset[0].ctrls_words);
+    EXPECT_EQ(144, dataset[0].cases_words);
+    EXPECT_EQ(160, dataset[0].ctrls_words);
 #elif ALIGN == 32
-    EXPECT_EQ(12, dataset[0].cases_words);
-    EXPECT_EQ(24, dataset[0].ctrls_words);
+    EXPECT_EQ(144, dataset[0].cases_words);
+    EXPECT_EQ(156, dataset[0].ctrls_words);
 #else
-    EXPECT_EQ(10, dataset[0].cases_words);
-    EXPECT_EQ(21, dataset[0].ctrls_words);
+    EXPECT_EQ(141, dataset[0].cases_words);
+    EXPECT_EQ(154, dataset[0].ctrls_words);
 #endif
 
     for (size_t i = 0; i < dataset.snps; i++) {

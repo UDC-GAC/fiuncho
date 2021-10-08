@@ -18,7 +18,11 @@
 #include <bitset>
 #include <fiuncho/ContingencyTable.h>
 #include <fiuncho/GenotypeTable.h>
+#include <fiuncho/dataset/Dataset.h>
 #include <gtest/gtest.h>
+#include <string>
+
+std::string tped, tfam;
 
 #ifdef ALIGN
 alignas(ALIGN)
@@ -204,37 +208,43 @@ TEST(GenotypeTableTest, fill)
 
 TEST(GenotypeTableTest, popcnt)
 {
-    uint32_t popcnt_cases[9] = {256, 128, 256, 128, 256, 256, 256, 256, 512};
-    uint64_t popcnt_ctrls[9] = {512, 512, 256, 512, 1024, 512, 256, 512, 512};
-
-    ContingencyTable<uint32_t> ctable(2, 8, 16);
-
 #ifdef ALIGN
-    EXPECT_EQ(16, ctable.size);
+    const auto d = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
 #else
-    EXPECT_EQ(9, ctable.size);
-#endif
-    EXPECT_EQ(8, ctable.cases_words);
-    EXPECT_EQ(16, ctable.ctrls_words);
-
-    GenotypeTable<uint64_t>::combine_and_popcnt(t1, t2, ctable);
-
-    for (auto i = 0; i < 9; i++) {
-        EXPECT_EQ(ctable.cases[i], popcnt_cases[i]);
-    }
-#ifdef ALIGN
-    for (auto i = 9; i < 16; i++) {
-        EXPECT_EQ(ctable.cases[i], 0);
-    }
+    const auto d = Dataset<uint64_t>::read(tped, tfam);
 #endif
 
-    for (auto i = 0; i < 9; i++) {
-        EXPECT_EQ(ctable.ctrls[i], popcnt_ctrls[i]);
+    GenotypeTable<uint64_t> gt(2, d[0].cases_words, d[0].ctrls_words);
+    GenotypeTable<uint64_t>::combine(d[0], d[1], gt);
+    ContingencyTable<uint32_t> ct(2, d[0].cases_words, d[0].ctrls_words);
+    GenotypeTable<uint64_t>::combine_and_popcnt(d[0], d[1], ct);
+
+    size_t i, j, k;
+    const size_t cases_words = gt.cases_words, ctrls_words = gt.ctrls_words;
+    for (i = 0; i < gt.size; ++i) {
+        uint32_t cnt = 0;
+        for (j = 0; j < cases_words; ++j) {
+            cnt += std::bitset<64>(gt.cases[i * cases_words + j]).count();
+        }
+        EXPECT_EQ(cnt, ct.cases[i]);
+        cnt = 0;
+        for (j = 0; j < ctrls_words; ++j) {
+            cnt += std::bitset<64>(gt.ctrls[i * ctrls_words + j]).count();
+        }
+        EXPECT_EQ(cnt, ct.ctrls[i]);
     }
-#ifdef ALIGN
-    for (auto i = 9; i < 16; i++) {
-        EXPECT_EQ(ctable.ctrls[i], 0);
+    for (; i < ct.size; ++i) {
+        EXPECT_EQ(0, ct.cases[i]);
+        EXPECT_EQ(0, ct.ctrls[i]);
     }
-#endif
 }
 } // namespace
+
+int main(int argc, char **argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    assert(argc == 3); // gtest leaved unparsed arguments for you
+    tped = argv[1];
+    tfam = argv[2];
+    return RUN_ALL_TESTS();
+}
