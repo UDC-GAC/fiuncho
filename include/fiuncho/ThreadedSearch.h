@@ -101,8 +101,7 @@ class ThreadedSearch : public Search
         std::vector<Result<int, float>> r(BLOCK_SIZE);
         cts.reserve(BLOCK_SIZE);
         for (i = 0; i < BLOCK_SIZE; ++i) {
-            cts.emplace_back(2, args.dataset[0].cases_words,
-                             args.dataset[0].ctrls_words);
+            cts.emplace_back(2);
             r[i].combination.resize(2);
         }
         MutualInformation<float> mi(args.dataset.cases, args.dataset.ctrls);
@@ -157,8 +156,7 @@ class ThreadedSearch : public Search
         std::vector<Result<int, float>> r(BLOCK_SIZE);
         cts.reserve(BLOCK_SIZE);
         for (i = 0; i < BLOCK_SIZE; ++i) {
-            cts.emplace_back(args.order, args.dataset[0].cases_words,
-                             args.dataset[0].ctrls_words);
+            cts.emplace_back(args.order);
             r[i].combination.resize(args.order);
         }
         MutualInformation<float> mi(args.dataset.cases, args.dataset.ctrls);

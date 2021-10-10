@@ -70,7 +70,7 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
     Result<int, float> block[BLOCK_SIZE];
     std::vector<ContingencyTable<uint32_t>> ctables;
     for (auto i = 0; i < BLOCK_SIZE; i++) {
-        ctables.emplace_back(order, cases_words, ctrls_words);
+        ctables.emplace_back(order);
         block[i].combination.resize(order);
     }
 

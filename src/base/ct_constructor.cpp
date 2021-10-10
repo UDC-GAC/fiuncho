@@ -27,11 +27,8 @@
 #include <fiuncho/ContingencyTable.h>
 
 template <>
-ContingencyTable<uint32_t>::ContingencyTable(const short order,
-                                             const size_t cases_words,
-                                             const size_t ctrls_words)
-    : size(std::pow(3, order)), cases_words(cases_words),
-      ctrls_words(ctrls_words), alloc(std::make_unique<uint32_t[]>(size * 2)),
+ContingencyTable<uint32_t>::ContingencyTable(const short order)
+    : size(std::pow(3, order)), alloc(std::make_unique<uint32_t[]>(size * 2)),
       cases(alloc.get()), ctrls(cases + size)
 {
 }

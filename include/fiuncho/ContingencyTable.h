@@ -56,8 +56,7 @@ template <class T> class ContingencyTable
      * @param order Number of SNPs represented in combination inside the table
      */
 
-    ContingencyTable(const short order, const size_t cases_words,
-                     const size_t ctrls_words);
+    ContingencyTable(const short order);
 
     //@}
 
@@ -70,8 +69,6 @@ template <class T> class ContingencyTable
      * Number of values in each subtable
      */
     const size_t size;
-
-    const size_t cases_words, ctrls_words;
 
   private:
     std::unique_ptr<T[]> alloc;

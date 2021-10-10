@@ -45,8 +45,7 @@ void loop_ctable(const int repetitions, const Dataset<uint64_t> &dataset,
                  const GenotypeTable<uint64_t> &prev)
 {
     const size_t snp_count = dataset.snps;
-    ContingencyTable<uint32_t> ctable(order, dataset[0].cases_words,
-                                      dataset[0].ctrls_words);
+    ContingencyTable<uint32_t> ctable(order);
     for (auto reps = 0; reps < repetitions; reps++) {
         for (size_t snp = order - 1; snp < snp_count; snp++) {
             GenotypeTable<uint64_t>::combine_and_popcnt(prev, dataset[snp],

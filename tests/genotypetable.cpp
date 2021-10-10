@@ -216,7 +216,7 @@ TEST(GenotypeTableTest, popcnt)
 
     GenotypeTable<uint64_t> gt(2, d[0].cases_words, d[0].ctrls_words);
     GenotypeTable<uint64_t>::combine(d[0], d[1], gt);
-    ContingencyTable<uint32_t> ct(2, d[0].cases_words, d[0].ctrls_words);
+    ContingencyTable<uint32_t> ct(2);
     GenotypeTable<uint64_t>::combine_and_popcnt(d[0], d[1], ct);
 
     size_t i, j, k;

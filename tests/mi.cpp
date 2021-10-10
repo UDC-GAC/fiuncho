@@ -23,7 +23,7 @@ namespace
 {
 TEST(MI, compute)
 {
-    ContingencyTable<uint32_t> ctable(2, 0, 0);
+    ContingencyTable<uint32_t> ctable(2);
 #ifdef ALIGN
     for (size_t i = 9; i < ctable.size; i++) {
         ctable.cases[i] = 0;

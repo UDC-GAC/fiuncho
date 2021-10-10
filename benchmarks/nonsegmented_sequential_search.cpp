@@ -63,7 +63,7 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
         btables.emplace_back(o, cases_words, ctrls_words);
     }
     // Vector of contingency tables (and their SNPs) for block processing
-    ContingencyTable<uint32_t> ctable(order, cases_words, ctrls_words);
+    ContingencyTable<uint32_t> ctable(order);
     MutualInformation<float> mi(dataset.cases, dataset.ctrls);
     Result<int, float> r;
     r.combination.resize(order);
