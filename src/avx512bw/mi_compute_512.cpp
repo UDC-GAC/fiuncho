@@ -79,5 +79,8 @@ float MutualInformation<float>::compute<uint32_t>(
 #endif
         h_x = _mm512_fmadd_ps(z1, z2, h_x);
     }
-    return _mm512_reduce_add_ps(h_all) - _mm512_reduce_add_ps(h_x) - h_y;
+
+    const float h_all_f = -_mm512_reduce_add_ps(h_all);
+    const float h_x_f = -_mm512_reduce_add_ps(h_x);
+    return h_x_f + h_y - h_all_f;
 }

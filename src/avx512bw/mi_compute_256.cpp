@@ -69,6 +69,7 @@ float MutualInformation<float>::compute<uint32_t>(
     }
 
     __m256 h_sum = _mm256_hadd_ps(h_all, h_x);
-    return (h_sum[0] + h_sum[1] + h_sum[4] + h_sum[5]) - h_y -
-           (h_sum[2] + h_sum[3] + h_sum[6] + h_sum[7]);
+    const float h_all_f = -(h_sum[0] + h_sum[1] + h_sum[4] + h_sum[5]);
+    const float h_x_f = -(h_sum[2] + h_sum[3] + h_sum[6] + h_sum[7]);
+    return h_x_f + h_y - h_all_f;
 }
