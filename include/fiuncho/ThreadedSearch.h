@@ -167,7 +167,7 @@ class ThreadedSearch : public Search
             // Fill genotype tables
             GenotypeTable<uint64_t>::combine(args.dataset[c[0]],
                                              args.dataset[c[1]], gts[0]);
-            for (auto i = 1; i < args.order - 2; ++i) {
+            for (i = 1; i < args.order - 2; ++i) {
                 GenotypeTable<uint64_t>::combine(
                     gts[i - 1], args.dataset[c[i + 1]], gts[i]);
             }
