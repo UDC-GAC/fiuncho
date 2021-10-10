@@ -40,10 +40,10 @@ TEST(ThreadedSearchTest, Main)
         ThreadedSearch search(t);
         for (auto o = 2; o < 5; o++) {
             Distribution<int> distribution(dataset.snps, o - 1, 1, 0);
-            auto result = search.run(dataset, o, distribution, 50);
+            auto result = search.run(dataset, o, distribution, 100);
             EXPECT_GT(result.size(), 0);
             if (o > 2) {
-                EXPECT_EQ(result.size(), 50);
+                EXPECT_EQ(result.size(), 100);
             }
             EXPECT_EQ(result[0].combination.size(), o);
             EXPECT_FALSE(has_repeated_elements(result));
