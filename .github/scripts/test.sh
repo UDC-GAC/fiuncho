@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -xe
 
+# Intel MPI needs to load vars for mpirun to be on PATH
+source ./.github/vars/$(echo ${GH_MATRIX_CC} | cut -d'+' -f1).sh
+
 # Run all tests using Intel SDE emulating the icelake-server processor
 if [ "${GH_MATRIX_TARGET_ARCH}" == "icelake-server" ]; then
     ARCH_FLAG="-icx"
