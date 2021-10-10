@@ -189,9 +189,15 @@ function(PREP_MI_256)
             message(FATAL_ERROR "Incorrect MI_IMPL function: ${MI_IMPL}")
         endif()
     else()
-        # By default use the if-mask implementation
-        list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_256.cpp")
+        # If AVX512BW is available, use the AVX512BW implementation of the
+        # 256-bit compute operation. Otherwise, use the AVX2 implementation
+        if(AVX512BW_ENABLED)
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_256.cpp")
+        else()
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx2/mi_compute.cpp")
+        endif()
     endif()
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
