@@ -15,3 +15,11 @@ GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB"
     echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee \
         ${APT_FILE}
 fi
+
+# Load vars
+SETVARS_SH=/opt/intel/oneapi/setvars.sh
+if [ -f ${SETVARS_SH} ]; then
+    source ${SETVARS_SH}
+fi
+# Also load vars after sucessfully installing the packages
+export CC_POST_INSTALL="source '${SETVARS_SH}'"
