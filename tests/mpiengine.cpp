@@ -31,11 +31,11 @@ TEST(MPIEngineTest, General)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPIEngine engine;
     for (auto o = 2; o < 5; o++) {
-        auto results = engine.run<ThreadedSearch>(tped, tfam, o, 100, 4);
+        auto results = engine.run<ThreadedSearch>(tped, tfam, o, 90, 4);
         if (rank == 0){
             EXPECT_GT(results.size(), 0);
             if (o > 2){
-                EXPECT_EQ(results.size(), 100);
+                EXPECT_EQ(results.size(), 90);
             }
             EXPECT_EQ(results[0].combination.size(), o);
             EXPECT_FALSE(has_repeated_elements(results));

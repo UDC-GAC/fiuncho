@@ -95,7 +95,7 @@ bool matches_mpi3snp_output(const std::vector<Result<int, float>> &v)
     const float fiuncho_max_mi = v[0].val;
     for (auto r : v){
         auto s = vec_to_str(r.combination);
-        if (std::abs(r.val / fiuncho_max_mi - norm_mi[s]) > 0.0001){
+        if (std::abs(r.val / fiuncho_max_mi - norm_mi[s]) > 0.0005){
             return false;
         }
     }
