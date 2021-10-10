@@ -18,3 +18,7 @@ wget -q ${INTEL_SDE_URL}
 mkdir intel_sde/
 tar -xf ${INTEL_SDE_TARFILE} --strip-components=1 -C intel_sde/
 echo "$(pwd)/intel_sde" >> $GITHUB_PATH
+
+# Post install actions
+bash -c "${CC_POST_INSTALL}"
+bash -c "${MPI_POST_INSTALL}"
