@@ -13,4 +13,4 @@ else
     exit 1
 fi
 cd build/
-sde64 ${ARCH_FLAG} -- make test
+sde64 ${ARCH_FLAG} -- env CTEST_OUTPUT_ON_FAILURE=1 make test

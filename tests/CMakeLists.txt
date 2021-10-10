@@ -79,6 +79,9 @@ create_gtest(test_mpiengine mpiengine.cpp test_mpiengine_bin
     "mpirun"
     "-n"
     "5"
+    "--oversubscribe"
+    "--bind-to"
+    "none"
     "${CMAKE_BINARY_DIR}/test_mpiengine_bin"
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tped"
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tfam")
