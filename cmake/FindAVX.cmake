@@ -18,11 +18,24 @@ int main()
     return 0;
 }")
 set(CPU_EXTENSIONS
+    "FMA"
+    "FMA4"
     "AVX"
     "AVX2"
-    "FMA"
     "AVX512F"
-    "AVX512BW")
+    "AVX512DQ"
+    "AVX512IFMA"
+    "AVX512CD"
+    "AVX512BW"
+    "AVX512VL"
+    "AVX512VBMI"
+    "AVX512VBMI2"
+    "AVX512VNNI"
+    "AVX512VNNIW"
+    "AVX512BITALG"
+    "AVX5124FMAPS"
+    "AVX512VPOPCNTDQ"
+    "AVX512VP2INTERSECT")
 
 foreach(E IN LISTS CPU_EXTENSIONS)
     string(REPLACE "%DEFINITION%" "__${E}__" ${E}_CODE "${TEMPLATE_CODE}")

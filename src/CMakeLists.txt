@@ -33,7 +33,7 @@ find_package(VectorLib)
 function(PREP_GTABLE_512)
     # Check if AVX512BW is supported
     if (NOT AVX512BW_ENABLED)
-        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+        message(FATAL_ERROR "Specified GT_OP_WIDTH of 512, but the "
             "AVX512BW vector extension is not available")
     endif()
     # Add genotype table constructor and combination function
@@ -42,7 +42,15 @@ function(PREP_GTABLE_512)
         "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
-        if(POPCNT_IMPL STREQUAL "harley-seal-512")
+        if(POPCNT_IMPL STREQUAL "popcnt-512")
+            # Check if AVX512_VPOPCNTDQ is supported
+            if (NOT AVX512VPOPCNTDQ_ENABLED)
+                message(FATAL_ERROR "Specified POPCNT_IMPL=popcnt-512, but
+                    the AVX512VPOPCNTDQ vector extension is not available")
+            endif()
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512vpopcntdq/gt_popcnt.cpp")
+        elseif(POPCNT_IMPL STREQUAL "harley-seal-512")
             list(APPEND SOURCE_LIST
                 "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_hs.cpp")
         elseif(POPCNT_IMPL STREQUAL "lookup-512")
@@ -71,9 +79,13 @@ function(PREP_GTABLE_512)
                 "${POPCNT_IMPL}")
         endif()
     else()
-        # By default use the Harley-Seal 512-bit popcnt algorithm
-        list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_lu.cpp")
+        if(AVX512VPOPCNTDQ_ENABLED)
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512vpopcntdq/gt_popcnt.cpp")
+        else()
+            list(APPEND SOURCE_LIST
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_lu.cpp")
+        endif()
     endif()
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
@@ -84,7 +96,7 @@ endfunction()
 function(PREP_GTABLE_256)
     # Check if AVX2 is supported
     if (NOT AVX2_ENABLED)
-        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but the "
+        message(FATAL_ERROR "Specified GT_OP_WIDTH of 256, but the "
             "AVX2 vector extension is not available")
     endif()
     # Add genotype table constructor and combination function
@@ -138,12 +150,12 @@ endfunction()
 function(PREP_MI_512)
     # Check if AVX512BW is supported
     if (NOT AVX512BW_ENABLED)
-        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+        message(FATAL_ERROR "Specified GT_OP_WIDTH of 512, but the "
             "AVX512BW vector extension is not available")
     endif()
     # Check if a math vector library is available
     if (NOT (LIBMVEC_AVAILABLE OR SVML_AVAILABLE))
-        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but there is no "
+        message(FATAL_ERROR "Specified GT_OP_WIDTH of 512, but there is no "
             "vector math library")
     endif()
     # Add source files
@@ -160,7 +172,7 @@ endfunction()
 function(PREP_MI_256)
     # Check if a math vector library is available
     if (NOT (LIBMVEC_AVAILABLE OR SVML_AVAILABLE))
-        message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but there is no "
+        message(FATAL_ERROR "Specified GT_OP_WIDTH of 256, but there is no "
             "vector math library")
     endif()
     # Add contingency table and MI constructors
@@ -172,7 +184,7 @@ function(PREP_MI_256)
         if(MI_IMPL STREQUAL "if-nomask")
             # Check if AVX2 is supported
             if (NOT AVX2_ENABLED)
-                message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 256, but the "
+                message(FATAL_ERROR "Specified GT_OP_WIDTH of 256, but the "
                     "AVX2 vector extension is not available")
             endif()
             list(APPEND SOURCE_LIST
@@ -180,7 +192,7 @@ function(PREP_MI_256)
         elseif(MI_IMPL STREQUAL "if-mask")
             # Check if AVX512BW is supported
             if (NOT AVX512BW_ENABLED)
-                message(FATAL_ERROR "Specified GTABLE_OP_WIDTH of 512, but the "
+                message(FATAL_ERROR "Specified GT_OP_WIDTH of 512, but the "
                     "AVX512BW vector extension is not available")
             endif()
             list(APPEND SOURCE_LIST
@@ -222,15 +234,15 @@ endfunction()
 
 file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/fiuncho/*.h")
 
-if(GTABLE_OP_WIDTH)
-    if(GTABLE_OP_WIDTH EQUAL 512)
+if(GT_OP_WIDTH)
+    if(GT_OP_WIDTH EQUAL 512)
         PREP_GTABLE_512()
-    elseif(GTABLE_OP_WIDTH EQUAL 256)
+    elseif(GT_OP_WIDTH EQUAL 256)
         PREP_GTABLE_256()
-    elseif(GTABLE_OP_WIDTH EQUAL 64)
+    elseif(GT_OP_WIDTH EQUAL 64)
         PREP_GTABLE_64()
     else()
-        message(FATAL_ERROR "Incorrect GTABLE_OP_WIDTH of ${GTABLE_OP_WIDTH}")
+        message(FATAL_ERROR "Incorrect GT_OP_WIDTH of ${GT_OP_WIDTH}")
     endif()
 else()
     # By default use the highest width available
@@ -251,7 +263,7 @@ if(MI_OP_WIDTH)
     elseif(MI_OP_WIDTH EQUAL 64)
         PREP_MI_64()
     else()
-        message(FATAL_ERROR "Incorrect MI_OP_WIDTH of ${GTABLE_OP_WIDTH}")
+        message(FATAL_ERROR "Incorrect MI_OP_WIDTH of ${GT_OP_WIDTH}")
     endif()
 else()
     # By default use the highest width available
