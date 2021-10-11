@@ -47,7 +47,7 @@ function(PREP_GTABLE_512)
                 "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_hs.cpp")
         elseif(POPCNT_IMPL STREQUAL "lookup-512")
             list(APPEND SOURCE_LIST
-                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_shuf512.cpp")
+                "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_lu.cpp")
         elseif(POPCNT_IMPL STREQUAL "cpu-256")
             list(APPEND SOURCE_LIST
                 "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx2_cpu.cpp")
@@ -73,7 +73,7 @@ function(PREP_GTABLE_512)
     else()
         # By default use the Harley-Seal 512-bit popcnt algorithm
         list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_hs.cpp")
+            "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_popcnt_avx512bw_lu.cpp")
     endif()
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
