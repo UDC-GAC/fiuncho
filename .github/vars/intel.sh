@@ -1,8 +1,7 @@
 export COMPILER_PACKAGES="intel-basekit intel-hpckit cmake"
 export CC=icc
 export CXX=icpc
-export CFLAGS="-march=${GH_MATRIX_TARGET_ARCH} -mtune=${GH_MATRIX_TARGET_ARCH} \
--O3 -fp-model=fast -Wall"
+export CFLAGS="-x${GH_MATRIX_TARGET_ARCH} -O3 -fp-model=fast -Wall"
 export CXXFLAGS="${CFLAGS}"
 
 # Add Intel repo
@@ -19,7 +18,12 @@ fi
 # Load vars
 SETVARS_SH=/opt/intel/oneapi/setvars.sh
 if [ -f ${SETVARS_SH} ]; then
-    source ${SETVARS_SH}
+    {
+        source ${SETVARS_SH}
+    } 2>/dev/null
 fi
 # Also load vars after sucessfully installing the packages
-export CC_POST_INSTALL="source '${SETVARS_SH}'"
+export CC_POST_INSTALL="\
+{\
+    source '${SETVARS_SH}';\
+} 2>/dev/null"
