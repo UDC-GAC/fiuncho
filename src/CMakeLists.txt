@@ -16,12 +16,12 @@
 ################################# Dependencies #################################
 
 find_package(Threads)
-if (NOT TARGET Threads::Threads)
+if (NOT Threads_FOUND)
     message(FATAL_ERROR "Missing threading library")
 endif()
 
 find_package(MPI)
-if (NOT TARGET MPI::MPI_CXX)
+if (NOT MPI_FOUND)
     message(FATAL_ERROR "Missing MPI library")
 endif()
 
