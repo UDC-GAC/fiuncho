@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/C++-14-blue.svg?style=flat&logo=c%2B%2B)
 ![](https://img.shields.io/github/license/UDC-GAC/fiuncho?color=blue)
-[![Build Status](https://travis-ci.com/UDC-GAC/fiuncho.svg?branch=main)](https://travis-ci.com/UDC-GAC/fiuncho)
+[![Build Status](https://img.shields.io/github/workflow/status/chponte/fiuncho/CMake%20Build%20Matrix/dev)](https://github.com/UDC-GAC/fiuncho/actions/workflows/cmake.yml)
 [![Documentation Status](https://readthedocs.org/projects/fiuncho/badge/?version=latest)](https://fiuncho.readthedocs.io/en/latest/?badge=latest)
 
 Fiuncho is an epistasis detection program, implementing an exhaustive search of

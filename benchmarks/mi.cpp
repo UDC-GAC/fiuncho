@@ -81,7 +81,7 @@ std::vector<double> bench_mi(const std::string tped, const std::string tfam,
         }
     }
     for (size_t snp = order - 1; snp < snp_count; snp++) {
-        ctables.emplace_back(order, cases_words, ctrls_words);
+        ctables.emplace_back(order);
         GenotypeTable<uint64_t>::combine_and_popcnt(
             (order > 2) ? gtables.back() : dataset[0], dataset[snp],
             ctables.back());
