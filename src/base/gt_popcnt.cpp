@@ -9,6 +9,7 @@ inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t gt_size,
     // Compute contingency tables for cases
     for (i = 0; i < gt_size; i++) {
         for (j = 0; j < 3; j++) {
+            ct_tbl[i * 3 + j] = 0;
             for (k = 0; k < words; k++) {
                 ct_tbl[i * 3 + j] += std::bitset<64>(gt_tbl1[i * words + k] &
                                                      gt_tbl2[j * words + k])
