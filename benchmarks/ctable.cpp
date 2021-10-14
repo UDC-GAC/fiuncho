@@ -76,11 +76,7 @@ std::vector<double> bench_ctable(const std::string tped, const std::string tfam,
                                  const std::vector<int> &affinity,
                                  const int repetitions)
 {
-#ifdef ALIGN
-    const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
     const size_t cases_words = dataset[0].cases_words,
                  ctrls_words = dataset[0].ctrls_words;
     if (order == 2) {

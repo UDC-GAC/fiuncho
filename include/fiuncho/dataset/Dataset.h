@@ -68,56 +68,27 @@ template <class T> class Dataset
         std::vector<Individual> individuals;
         std::vector<SNP> snps;
         size_t cases_count, ctrls_count;
+        // Read input files
         read_individuals(tfam, individuals, cases_count, ctrls_count);
         read_snps(tped, individuals, snps);
+        // Allocate enough space for representing all SNPs for all individuals
+#ifdef ALIGN
+        constexpr size_t NT = ALIGN / sizeof(T); // Number of T's in ALIGN bytes
+        constexpr size_t NBITS = ALIGN * 8; // Number of bits in ALIGN bytes
+        const size_t cases_words = (cases_count + NBITS - 1) / NBITS * NT,
+                     ctrls_words = (ctrls_count + NBITS - 1) / NBITS * NT;
+#else
         // Allocate enough space for representing all SNPs for all individuals
         constexpr size_t NBITS = sizeof(T) * 8; // Number of bits in T
         const size_t cases_words = (cases_count + NBITS - 1) / NBITS,
                      ctrls_words = (ctrls_count + NBITS - 1) / NBITS;
-        // Find the address of the first aligned position inside the allocation
-        T *alloc = (T *)new T[(cases_words + ctrls_words) * 3 * snps.size()];
-
-        Dataset<uint64_t> d(alloc, cases_count, ctrls_count, snps.size());
-        populate(individuals, snps, alloc, d.table_vector, cases_words,
-                 ctrls_words);
-
-        return d;
-    }
-
-    /**
-     * Read input data and store it using a GenotypeTable representation. The
-     * underlying arrays used in the different tables are allocated contiguously
-     * in memory, with each array aligned to \a N bytes.
-     *
-     * @param tped Path to the tped input file
-     * @param tfam Path to the tfam input file
-     * @tparam N number of bytes to align the underlying arrays to
-     * @return A Dataset object
-     */
-
-    template <size_t N>
-    static Dataset<T> read(std::string tped, std::string tfam)
-    {
-        std::vector<Individual> individuals;
-        std::vector<SNP> snps;
-        size_t cases_count, ctrls_count;
-        read_individuals(tfam, individuals, cases_count, ctrls_count);
-        read_snps(tped, individuals, snps);
-        // Allocate enough space for representing all SNPs for all individuals
-        constexpr size_t NT = N / sizeof(T); // Number of T's in N bytes
-        constexpr size_t NBITS = N * 8;      // Number of bits in N bytes
-        const size_t cases_words = (cases_count + NBITS - 1) / NBITS * NT,
-                     ctrls_words = (ctrls_count + NBITS - 1) / NBITS * NT;
-        // Find the address of the first aligned position inside the allocation
-        T *alloc =
-            (T *)new T[(cases_words + ctrls_words) * 3 * snps.size() + NT];
-
-        T *ptr = ((T *)((((uintptr_t)alloc) + N - 1) / N * N));
-
-        Dataset<uint64_t> d(alloc, cases_count, ctrls_count, snps.size());
-        populate(individuals, snps, ptr, d.table_vector, cases_words,
-                 ctrls_words);
-
+#endif
+        // Create Dataset object
+        Dataset<T> d(cases_count, ctrls_count, snps.size(),
+                     GenotypeTable<T>::make_array(snps.size(), 1, cases_words,
+                                                  ctrls_words));
+        // Fill it with the information of individuals and snps
+        populate(d, individuals, snps, cases_words, ctrls_words);
         return d;
     }
 
@@ -134,17 +105,9 @@ template <class T> class Dataset
      * @param i Index of the table in the vector
      * @return A reference to the GenotypeTable object
      */
-    GenotypeTable<T> &operator[](int i) { return table_vector[i]; }
+    GenotypeTable<T> &operator[](int i) { return data[i]; }
 
-    const GenotypeTable<T> &operator[](int i) const { return table_vector[i]; }
-
-    /**
-     * Access the underlying vector of GenotypeTable's
-     *
-     * @return A reference to the GenotypeTable vector
-     */
-
-    std::vector<GenotypeTable<T>> &data() { return table_vector; }
+    const GenotypeTable<T> &operator[](int i) const { return data[i]; }
 
     //@}
 
@@ -172,13 +135,15 @@ template <class T> class Dataset
      * Vector holding all the GenotypeTable's representing the individual SNP's
      * information
      */
-    std::vector<GenotypeTable<T>> table_vector;
+    GenotypeTable<T> *data;
 
     //@}
 
   private:
-    Dataset(T *ptr, size_t cases_count, size_t ctrls_count, size_t snps_count)
-        : cases(cases_count), ctrls(ctrls_count), snps(snps_count), alloc(ptr)
+    Dataset(size_t cases_count, size_t ctrls_count, size_t snps_count,
+            std::unique_ptr<GenotypeTable<T>[]> ptr)
+        : cases(cases_count), ctrls(ctrls_count), snps(snps_count),
+          data(ptr.get()), array(std::move(ptr))
     {
     }
 
@@ -239,29 +204,23 @@ template <class T> class Dataset
         file.close();
     }
 
-    inline static void populate(const std::vector<Individual> &inds,
-                                const std::vector<SNP> &snps, T *ptr,
-                                std::vector<GenotypeTable<T>> &data,
+    inline static void populate(Dataset<T> &dataset,
+                                const std::vector<Individual> &inds,
+                                const std::vector<SNP> &snps,
                                 const size_t cases_words,
                                 const size_t ctrls_words)
     {
         constexpr size_t BITS = sizeof(T) * 8; // Number of bits in T
-
         // Buffers
         T cases_buff[3], ctrls_buff[3];
-        data.reserve(snps.size());
-        for (size_t i = 0; i < snps.size(); i++) {
+        for (size_t i = 0; i < dataset.snps; i++) {
             // Clear buffers
             for (auto k = 0; k < 3; k++) {
-                ctrls_buff[k] = 0;
                 cases_buff[k] = 0;
+                ctrls_buff[k] = 0;
             }
-
-            // Create bit table for each SNP
-            data.emplace_back(ptr, cases_words, ptr + 3 * cases_words,
-                              ctrls_words);
-            ptr += 3 * cases_words + 3 * ctrls_words;
-            auto &table = data.back();
+            // Obtain reference to the next genotype table
+            auto &table = dataset[i];
             // Populate bit table with the snp information
             size_t cases_cnt = 0;
             size_t ctrls_cnt = 0;
@@ -283,7 +242,7 @@ template <class T> class Dataset
                 }
                 // If the buffer is full, write buffer into the bit table and
                 // clear the buffer
-                if (cases_cnt % BITS == 0) {
+                if (cases_cnt > 0 && cases_cnt % BITS == 0) {
                     const int offset = cases_cnt / BITS - 1;
                     for (auto k = 0; k < 3; k++) {
                         table.cases[k * cases_words + offset] = cases_buff[k];
@@ -291,7 +250,7 @@ template <class T> class Dataset
                     }
                 }
                 // Do the same for controls
-                if (ctrls_cnt % BITS == 0) {
+                if (ctrls_cnt > 0 && ctrls_cnt % BITS == 0) {
                     const int offset = ctrls_cnt / BITS - 1;
                     for (auto k = 0; k < 3; k++) {
                         table.ctrls[k * ctrls_words + offset] = ctrls_buff[k];
@@ -300,6 +259,13 @@ template <class T> class Dataset
                 }
             }
             // If the number of controls is not divisible by the bits in T
+            if (cases_cnt % BITS != 0) {
+                const int offset = cases_cnt / BITS;
+                for (auto k = 0; k < 3; k++) {
+                    table.cases[k * cases_words + offset] = cases_buff[k];
+                }
+            }
+            // Repeat for ctrls
             if (ctrls_cnt % BITS != 0) {
                 // Write last (incomplete) word from each row of the table
                 const int offset = ctrls_cnt / BITS;
@@ -307,30 +273,23 @@ template <class T> class Dataset
                     table.ctrls[k * ctrls_words + offset] = ctrls_buff[k];
                 }
             }
-            // Repeat for cases
-            if (cases_cnt % BITS != 0) {
-                const int offset = cases_cnt / BITS;
-                for (auto k = 0; k < 3; k++) {
-                    table.cases[k * cases_words + offset] = cases_buff[k];
-                }
-            }
             // Write 0 in the remaining uninitialized words of the controls
             // array
-            for (auto i = (ctrls_cnt + BITS - 1) / BITS; i < ctrls_words; i++) {
-                for (auto k = 0; k < 3; k++) {
-                    table.ctrls[k * ctrls_words + i] = 0;
-                }
-            }
-            // Repeat for cases
             for (auto i = (cases_cnt + BITS - 1) / BITS; i < cases_words; i++) {
                 for (auto k = 0; k < 3; k++) {
                     table.cases[k * cases_words + i] = 0;
                 }
             }
+            // Repeat for ctrls
+            for (auto i = (ctrls_cnt + BITS - 1) / BITS; i < ctrls_words; i++) {
+                for (auto k = 0; k < 3; k++) {
+                    table.ctrls[k * ctrls_words + i] = 0;
+                }
+            }
         }
     }
 
-    std::unique_ptr<T[]> alloc;
+    std::unique_ptr<GenotypeTable<T>[]> array;
 };
 
 #endif

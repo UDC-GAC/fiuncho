@@ -26,12 +26,7 @@ namespace
 {
 TEST(DatasetTest, Dataset)
 {
-#ifdef ALIGN
-    const Dataset<uint64_t> dataset =
-        Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
     const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
 
     EXPECT_EQ(10, dataset.snps);
     EXPECT_EQ(9000, dataset.cases);

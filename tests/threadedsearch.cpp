@@ -29,11 +29,7 @@ namespace
 TEST(ThreadedSearchTest, Main)
 {
     // Run ThreadedSearch
-#ifdef ALIGN
-    const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
 
     std::vector<int> thread_count_vector{1, 32};
     for (auto t : thread_count_vector) {

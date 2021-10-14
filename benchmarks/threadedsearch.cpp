@@ -58,11 +58,7 @@ int main(int argc, char *argv[])
     const unsigned short order = atoi(argv[2]);
     const std::string tped = argv[3], tfam = argv[4];
     // Data
-#ifdef ALIGN
-    const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
     const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
     Distribution<int> distribution(dataset.snps, order - 1, 1, 0);
     auto search = ThreadedSearch(thread_count);
     search.run(dataset, order, distribution, 10);

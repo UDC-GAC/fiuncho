@@ -24,195 +24,38 @@
 
 std::string tped, tfam;
 
-#ifdef ALIGN
-alignas(ALIGN)
-#endif
-    uint64_t cases1[3][8] = {
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff}};
-#ifdef ALIGN
-alignas(ALIGN)
-#endif
-    uint64_t cases2[3][8] = {
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff}};
-#ifdef ALIGN
-alignas(ALIGN)
-#endif
-    uint64_t ctrls1[3][16] = {
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000}};
-#ifdef ALIGN
-alignas(ALIGN)
-#endif
-    uint64_t ctrls2[3][16] = {
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000}};
-
-GenotypeTable<uint64_t> t1(cases1[0], 8, ctrls1[0], 16);
-GenotypeTable<uint64_t> t2(cases2[0], 8, ctrls2[0], 16);
-
 namespace
 {
 TEST(GenotypeTableTest, fill)
 {
-    uint64_t res_cases[9][8] = {
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff}};
-    uint64_t res_ctrls[9][16] = {
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA,
-         0x5555555555555555, 0x5555555555555555, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000},
-        {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA, 0x5555555555555555,
-         0x5555555555555555, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xAAAAAAAAAAAAAAAA,
-         0xAAAAAAAAAAAAAAAA, 0x5555555555555555, 0x5555555555555555,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000},
-        {0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000, 0x0000000000000000, 0xffffffffffffffff,
-         0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
-         0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
-         0x0000000000000000}};
-
-    GenotypeTable<uint64_t> result(2, 8, 16);
+    const auto d = Dataset<uint64_t>::read(tped, tfam);
+    const auto &t1 = d[0];
+    const auto &t2 = d[1];
+    GenotypeTable<uint64_t> result(2, t1.cases_words, t1.ctrls_words);
 
     EXPECT_EQ(9, result.size);
-    EXPECT_EQ(8, result.cases_words);
-    EXPECT_EQ(16, result.ctrls_words);
+    EXPECT_EQ(t1.cases_words, result.cases_words);
+    EXPECT_EQ(t1.ctrls_words, result.ctrls_words);
 
     GenotypeTable<uint64_t>::combine(t1, t2, result);
 
     for (size_t i = 0; i < result.size; i++) {
         for (size_t j = 0; j < result.cases_words; j++) {
             EXPECT_TRUE(result.cases[i * result.cases_words + j] ==
-                        res_cases[i][j]);
+                        (t1.cases[(i / 3) * t1.cases_words + j] &
+                         t2.cases[(i % 3) * t2.cases_words + j]));
         }
         for (size_t j = 0; j < result.ctrls_words; j++) {
             EXPECT_TRUE(result.ctrls[i * result.ctrls_words + j] ==
-                        res_ctrls[i][j]);
+                        (t1.ctrls[(i / 3) * t1.ctrls_words + j] &
+                         t2.ctrls[(i % 3) * t2.ctrls_words + j]));
         }
     }
 }
 
 TEST(GenotypeTableTest, popcnt)
 {
-#ifdef ALIGN
-    const auto d = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
     const auto d = Dataset<uint64_t>::read(tped, tfam);
-#endif
 
     GenotypeTable<uint64_t> gt(2, d[0].cases_words, d[0].ctrls_words);
     GenotypeTable<uint64_t>::combine(d[0], d[1], gt);

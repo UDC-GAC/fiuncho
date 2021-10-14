@@ -133,11 +133,7 @@ class MPIEngine
         function_time = MPI_Wtime();
         dataset_time = MPI_Wtime();
 #endif
-#ifdef ALIGN
-        const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
         const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
         // Check Dataset size to avoid int overflow
         if (dataset.snps > (size_t)std::numeric_limits<int>::max()) {
             throw std::runtime_error(
