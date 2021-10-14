@@ -195,7 +195,7 @@ template <class T> class GenotypeTable
      * the genotypes for all individuals in the control group
      */
 
-    GenotypeTable(const size_t order, const size_t cases_words,
+    GenotypeTable(const short order, const size_t cases_words,
                   const size_t ctrls_words, std::shared_ptr<T> alloc, T *cases,
                   T *ctrls)
         : order(order), size(std::pow(3, order)), cases_words(cases_words),

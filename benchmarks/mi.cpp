@@ -29,13 +29,12 @@
 #include <fiuncho/dataset/Dataset.h>
 #include <iostream>
 
-void loop_mi(const int repetitions,
-             std::vector<ContingencyTable<uint32_t>> &ctables,
-             const MutualInformation<float> &mi)
+void loop_mi(const int repetitions, ContingencyTable<uint32_t> *ctables,
+             size_t size, const MutualInformation<float> &mi)
 {
     for (auto reps = 0; reps < repetitions; reps++) {
-        for (auto &ctable : ctables) {
-            mi.compute(ctable);
+        for (size_t i = 0; i < size; ++i) {
+            mi.compute(ctables[i]);
         }
     }
 }
@@ -65,8 +64,6 @@ std::vector<double> bench_mi(const std::string tped, const std::string tfam,
     // Initialize contingency tables outside of the main loop
     std::vector<GenotypeTable<uint64_t>> gtables;
     gtables.reserve(order - 2);
-    std::vector<ContingencyTable<uint32_t>> ctables;
-    ctables.reserve(snp_count - (order - 1));
     if (order > 2) {
         gtables.emplace_back(2, cases_words, ctrls_words);
         GenotypeTable<uint64_t>::combine(dataset[0], dataset[1], gtables[0]);
@@ -76,15 +73,19 @@ std::vector<double> bench_mi(const std::string tped, const std::string tfam,
                                              gtables[o - 2]);
         }
     }
-    for (size_t snp = order - 1; snp < snp_count; snp++) {
-        ctables.emplace_back(order);
+    size_t ctables_count = snp_count - (order - 1);
+    auto ctables_array =
+        ContingencyTable<uint32_t>::make_array(ctables_count, order);
+    auto ctables = ctables_array.get();
+    for (size_t i = 0; i < ctables_count; i++) {
         GenotypeTable<uint64_t>::combine_and_popcnt(
-            (order > 2) ? gtables.back() : dataset[0], dataset[snp],
-            ctables.back());
+            (order > 2) ? gtables.back() : dataset[0], dataset[i + order - 1],
+            ctables[i]);
     }
     MutualInformation<float> mi(dataset.cases, dataset.ctrls);
     // Run benchmark function in parallel
-    return multithread_pinned_time(affinity, loop_mi, repetitions, ctables, mi);
+    return multithread_pinned_time(affinity, loop_mi, repetitions, ctables,
+                                   ctables_count, mi);
 }
 
 int main(int argc, char *argv[])

@@ -69,13 +69,12 @@ void stack_search(const Dataset<uint64_t> &dataset, const unsigned short order,
     // Vector of contingency tables (and their SNPs) for block processing
     std::vector<Result<int, float>> block;
     block.resize(BLOCK_SIZE);
-    std::vector<ContingencyTable<uint32_t>> ctables;
-    ctables.reserve(BLOCK_SIZE);
     for (auto i = 0; i < BLOCK_SIZE; i++) {
-        ctables.emplace_back(order);
         block[i].combination.resize(order);
     }
-
+    auto ctables_ptr =
+        ContingencyTable<uint32_t>::make_array(BLOCK_SIZE, order);
+    auto ctables = ctables_ptr.get();
     MutualInformation<float> mi(dataset.cases, dataset.ctrls);
 
     int i, j, l;

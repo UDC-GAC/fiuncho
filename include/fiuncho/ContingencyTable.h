@@ -45,6 +45,10 @@ template <class T> class ContingencyTable
     ContingencyTable(const ContingencyTable<T> &) = delete;
     ContingencyTable(ContingencyTable<T> &&) = default;
 
+    ContingencyTable() : size(0), alloc(nullptr), cases(nullptr), ctrls(nullptr)
+    {
+    }
+
     /**
      * @name Constructors
      */
@@ -63,18 +67,41 @@ template <class T> class ContingencyTable
 #define N (ALIGN / sizeof(T))
 #define NBITS (ALIGN * 8)
           size((size_t)(std::pow(3, order) + N - 1) / N * N),
-          alloc(std::make_unique<T[]>(size * 2 + N)),
+          alloc(new T[size * 2 + N], std::default_delete<T[]>()),
 #undef N
 #undef NBITS
           cases((T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN)),
-
 #else
-          size(std::pow(3, order)), alloc(std::make_unique<T[]>(size * 2)),
+          size(std::pow(3, order)),
+          alloc(new T[size * 2], std::default_delete<T[]>()),
           cases(alloc.get()),
 #endif
-          ctrls(cases + size)
+          ctrls(cases + size){};
 
-              {};
+    static std::unique_ptr<ContingencyTable<T>[]>
+    make_array(const size_t N, const short order) {
+    // Allocate a single contiguous array for all subtables
+#ifdef ALIGN
+        constexpr size_t NT = ALIGN / sizeof(T);
+        const size_t size = (size_t)(std::pow(3, order) + NT - 1) / NT * NT;
+        std::shared_ptr<T> alloc(new T[N * size * 2 + NT],
+                                 std::default_delete<T[]>());
+        T *ptr = (T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN);
+#else
+        const size_t size = std::pow(3, order);
+        std::shared_ptr<T> alloc(new T[N * size * 2],
+                                 std::default_delete<T[]>());
+        T *ptr = alloc.get();
+#endif
+        // Allocate the ContingencyTable object array
+        auto array = std::make_unique<ContingencyTable<T>[]>(N);
+        // Initialize ContingencyTable objects
+        for (size_t i = 0; i < N; ++i) {
+            new (array.get() + i) ContingencyTable(
+                size, alloc, ptr + i * size * 2, ptr + i * size * 2 + size);
+        }
+        return array;
+    }
 
     //@}
 
@@ -89,7 +116,13 @@ template <class T> class ContingencyTable
     const size_t size;
 
   private:
-    std::unique_ptr<T[]> alloc;
+    ContingencyTable(const size_t size, std::shared_ptr<T> alloc, T *cases,
+                     T *ctrls)
+        : size(size), alloc(alloc), cases(cases), ctrls(ctrls)
+    {
+    }
+
+    std::shared_ptr<T> alloc;
 
   public:
     /**
