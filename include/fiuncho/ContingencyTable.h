@@ -23,6 +23,7 @@
 #ifndef FIUNCHO_CONTINGENCYTABLE_H
 #define FIUNCHO_CONTINGENCYTABLE_H
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -56,7 +57,24 @@ template <class T> class ContingencyTable
      * @param order Number of SNPs represented in combination inside the table
      */
 
-    ContingencyTable(const short order);
+    ContingencyTable(const short order)
+        :
+#ifdef ALIGN
+#define N (ALIGN / sizeof(T))
+#define NBITS (ALIGN * 8)
+          size((size_t)(std::pow(3, order) + N - 1) / N * N),
+          alloc(std::make_unique<T[]>(size * 2 + N)),
+#undef N
+#undef NBITS
+          cases((T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN)),
+
+#else
+          size(std::pow(3, order)), alloc(std::make_unique<T[]>(size * 2)),
+          cases(alloc.get()),
+#endif
+          ctrls(cases + size)
+
+              {};
 
     //@}
 

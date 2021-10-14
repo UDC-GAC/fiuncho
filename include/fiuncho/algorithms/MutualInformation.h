@@ -25,6 +25,8 @@
 
 #include <fiuncho/algorithms/Algorithm.h>
 
+#include <cmath>
+
 /**
  * @class MutualInformation
  * @brief Class implementing the Mutual Information (MI) computation. Taking the
@@ -51,8 +53,8 @@
  * @tparam T data type used to represent the MI values
  */
 
-template <class T>
-class MutualInformation : public Algorithm<T> {
+template <class T> class MutualInformation : public Algorithm<T>
+{
   public:
     /**
      * @name Constructors
@@ -70,7 +72,14 @@ class MutualInformation : public Algorithm<T> {
      * @param num_ctrls Path to the tfam data file
      */
 
-    MutualInformation(unsigned int num_cases, unsigned int num_ctrls);
+    MutualInformation(unsigned int num_cases, unsigned int num_ctrls)
+    {
+        inv_inds = 1.0 / (num_cases + num_ctrls);
+        float p = num_cases * inv_inds;
+        h_y = (-1.0) * p * logf(p);
+        p = num_ctrls * inv_inds;
+        h_y -= p * logf(p);
+    };
 
     //@}
 

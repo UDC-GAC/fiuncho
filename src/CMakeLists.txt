@@ -37,9 +37,7 @@ function(PREP_GTABLE_512)
             "AVX512BW vector extension is not available")
     endif()
     # Add genotype table constructor and combination function
-    set(SOURCE_LIST
-        "${PROJECT_SOURCE_DIR}/src/avx512f/gt_constructor.cpp"
-        "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp")
+    set(SOURCE_LIST "${PROJECT_SOURCE_DIR}/src/avx512bw/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
         if(POPCNT_IMPL STREQUAL "popcnt-512")
@@ -100,9 +98,7 @@ function(PREP_GTABLE_256)
             "AVX2 vector extension is not available")
     endif()
     # Add genotype table constructor and combination function
-    set(SOURCE_LIST
-        "${PROJECT_SOURCE_DIR}/src/avx2/gt_constructor.cpp"
-        "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp")
+    set(SOURCE_LIST "${PROJECT_SOURCE_DIR}/src/avx2/gt_combine.cpp")
     # Select contingency table calculation implementation
     if(POPCNT_IMPL)
         if(POPCNT_IMPL STREQUAL "cpu-256")
@@ -141,7 +137,6 @@ endfunction()
 function(PREP_GTABLE_64)
     # Add genotype table constructor and combination function
     set(SOURCE_LIST
-        "${PROJECT_SOURCE_DIR}/src/base/gt_constructor.cpp"
         "${PROJECT_SOURCE_DIR}/src/base/gt_combine.cpp"
         "${PROJECT_SOURCE_DIR}/src/base/gt_popcnt.cpp"
         PARENT_SCOPE)
@@ -160,8 +155,6 @@ function(PREP_MI_512)
     endif()
     # Add source files
     list(APPEND SOURCE_LIST
-        "${PROJECT_SOURCE_DIR}/src/avx512f/ct_constructor.cpp"
-        "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp"
         "${PROJECT_SOURCE_DIR}/src/avx512bw/mi_compute_512.cpp")
     # Define data alignment, overwrite if necessary
     set(DATA_ALIGN 64 PARENT_SCOPE)
@@ -175,10 +168,6 @@ function(PREP_MI_256)
         message(FATAL_ERROR "Specified GT_OP_WIDTH of 256, but there is no "
             "vector math library")
     endif()
-    # Add contingency table and MI constructors
-    list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/avx2/ct_constructor.cpp"
-            "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp")
     # Select MI implementation
     if(MI_IMPL)
         if(MI_IMPL STREQUAL "if-nomask")
@@ -222,10 +211,7 @@ endfunction()
 
 function(PREP_MI_64)
     # Add contingency table and MI constructors, and MI compute function
-    list(APPEND SOURCE_LIST
-            "${PROJECT_SOURCE_DIR}/src/base/ct_constructor.cpp"
-            "${PROJECT_SOURCE_DIR}/src/base/mi_constructor.cpp"
-            "${PROJECT_SOURCE_DIR}/src/base/mi_compute.cpp")
+    list(APPEND SOURCE_LIST "${PROJECT_SOURCE_DIR}/src/base/mi_compute.cpp")
     # Update SOURCE_LIST variable in parent scope
     set(SOURCE_LIST ${SOURCE_LIST} PARENT_SCOPE)
 endfunction()

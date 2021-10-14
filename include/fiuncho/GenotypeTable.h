@@ -25,6 +25,7 @@
 
 #include <fiuncho/ContingencyTable.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -86,7 +87,19 @@ template <class T> class GenotypeTable
      */
 
     GenotypeTable(const short order, const size_t cases_words,
-                  const size_t ctrls_words);
+                  const size_t ctrls_words)
+        : order(order), size(std::pow(3, order)), cases_words(cases_words),
+          ctrls_words(ctrls_words),
+#ifdef ALIGN
+#define N (ALIGN / sizeof(T))
+          alloc(std::make_unique<T[]>(size * (cases_words + ctrls_words) + N)),
+#undef N
+          cases((T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN)),
+#else
+          alloc(std::make_unique<T[]>(size * (cases_words + ctrls_words))),
+          cases(alloc.get()),
+#endif
+          ctrls(cases + size * cases_words){};
 
     //@}
 
