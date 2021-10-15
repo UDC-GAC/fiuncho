@@ -33,7 +33,7 @@
 #include <fiuncho/utils/StaticStack.h>
 #include <iostream>
 
-#define BLOCK_SIZE (int)round(16384 / pow(3, order - 2))
+#define BLOCK_SIZE 1474560 / (int)pow(3, order)
 
 /**
  * @brief Single thread epistasis search. The function implements a depth-first
