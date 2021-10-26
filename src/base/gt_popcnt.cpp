@@ -1,13 +1,13 @@
 #include <bitset>
 #include <fiuncho/GenotypeTable.h>
 
-inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t gt_size,
+inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t size1,
                        const uint64_t *gt_tbl2, const size_t words,
                        uint32_t *ct_tbl, const size_t ct_size)
 {
     size_t i, j, k;
     // Compute contingency tables for cases
-    for (i = 0; i < gt_size; i++) {
+    for (i = 0; i < size1; i++) {
         for (j = 0; j < 3; j++) {
             ct_tbl[i * 3 + j] = 0;
             for (k = 0; k < words; k++) {
@@ -17,7 +17,7 @@ inline void popcnt_aux(const uint64_t *gt_tbl1, const size_t gt_size,
             }
         }
     }
-    for (i = gt_size * 3; i < ct_size; ++i) {
+    for (i = size1 * 3; i < ct_size; ++i) {
         ct_tbl[i] = 0;
     }
 }
