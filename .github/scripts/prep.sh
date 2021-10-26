@@ -6,9 +6,10 @@ source ./.github/vars/$(echo ${GH_MATRIX_CC} | cut -d'+' -f1).sh
 source ./.github/vars/$(echo ${GH_MATRIX_CC} | cut -d'+' -f2).sh
 
 # Install deps
-sudo apt-get update -qq 1>/dev/null
-sudo apt-get upgrade -qq 1>/dev/null
-sudo apt-get install ${COMPILER_PACKAGES} ${MPI_PACKAGES} -qq 1>/dev/null
+sudo apt-get -o Acquire::ForceIPv4=true update -qq 1>/dev/null
+sudo apt-get -o Acquire::ForceIPv4=true upgrade -qq 1>/dev/null
+sudo apt-get -o Acquire::ForceIPv4=true install \
+    ${COMPILER_PACKAGES} ${MPI_PACKAGES} -qq 1>/dev/null
 
 # Install Intel SDE
 INTEL_SDE_URL="https://software.intel.com/content/dam/develop/external/\
