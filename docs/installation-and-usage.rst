@@ -71,25 +71,54 @@ CMAKE_BUILD_TYPE
   The default CMake variable to select a build configuration. Accepted values
   are ``Debug``, ``DebWithRelInfo``, ``Release`` and ``Benchmark``.
 
-FORCE_AVX512F512
-  Force CMake to build Fiuncho using the AVX Intrinsics implementation using 512
-  bit operations from the ``AVX512F`` extension. Accepted values are ``ON`` and
-  ``OFF``. This option is incompatible with any other ``FORCE_*`` option.
+GT_OP_WIDTH
+  Select the vector width for the operations used during the
+  :cpp:class:`GenotypeTable` computation functions
+  :cpp:func:`GenotypeTable::combine` and
+  :cpp:func:`GenotypeTable::combine_and_popcnt`. Accepted values are: ``512``
+  (default if ``AVX512BW`` is available), ``256`` (default if only ``AVX2`` is
+  available), ``64`` (default if no AVX extensions are available).
 
-FORCE_AVX512F256
-  Force CMake to build Fiuncho using the AVX Intrinsics implementation using 256
-  bit operations from the ``AVX512F`` extension. Accepted values are ``ON`` and
-  ``OFF``. This option is incompatible with any other ``FORCE_*`` option.
+POPCNT_IMPL
+  Select the implementation to be used during the :cpp:class:`ContingencyTable`
+  computation function :cpp:func:`GenotypeTable::combine_and_popcnt`. Accepted
+  values depend on the vector width used:
 
-FORCE_AVX2
-  Force CMake to build Fiuncho using the AVX Intrinsics implementation using 256
-  bit operations from the ``AVX2`` extension. Accepted values are ``ON`` and
-  ``OFF``. This option is incompatible with any other ``FORCE_*`` option.
+  * ``GT_OP_WIDTH`` = ``512``:
 
-FORCE_NOAVX
-  Force CMake to build Fiuncho not using any of the AVX Intrinsics
-  implementations. Accepted values are ``ON`` and ``OFF``. This option is
-  incompatible with any other ``FORCE_*`` option.
+    * ``popcnt-512`` (default if ``AVX512VPOPCNTDQ`` is available)
+    * ``harley-seal-512``
+    * ``lookup-512`` (default if only ``AVX512BW`` is available)
+    * ``cpu-256``
+    * ``harley-seal-256``
+    * ``lookup-original-256``
+    * ``lookup-256``
+    * ``popcnt-movdq-64``
+    * ``popcnt-unrolled-errata-64``
+
+  * ``GT_OP_WIDTH`` = ``256``:
+
+    * ``cpu-256``
+    * ``harley-seal-256``
+    * ``lookup-original-256``
+    * ``lookup-256`` (defaulf if only ``AVX2`` is available)
+    * ``popcnt-movdq-64``
+    * ``popcnt-unrolled-errata-64``
+
+MI_OP_WIDTH
+  Select the vector width for the operations used during the
+  :cpp:class:`MutualInformation` computation function
+  :cpp:func:`MutualInformation::compute`. Accepted values are: ``512`` (default
+  if ``AVX512BW`` is available), ``256`` (default if only ``AVX2`` is
+  available), ``64`` (default if no AVX extensions are available).
+
+MI_IMPL
+  Select the implementation to be used during the :cpp:class:`MutualInformation`
+  computation function :cpp:func:`MutualInformation::compute`. Only available
+  for ``MI_OP_WIDTH`` = ``256``. Accepted values are:
+
+  * ``if-nomask`` (default if ``AVX512BW`` is available)
+  * ``if-mask`` (default if only ``AVX2`` is available)
 
 ------------------------------------------
 Command-line usage
