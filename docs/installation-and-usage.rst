@@ -63,6 +63,10 @@ architecture with the appropriate one.
 Advanced configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. warning::
+  It is not recommended to change any of these variables. CMake will select the
+  best implementation available based on your target CPU.
+
 More advanced configurations are also possible through CMake's project
 variables. In addition to the default CMake variables, this project introduces
 the following variables:
@@ -72,7 +76,7 @@ CMAKE_BUILD_TYPE
   are ``Debug``, ``DebWithRelInfo``, ``Release`` and ``Benchmark``.
 
 GT_OP_WIDTH
-  Select the vector width for the operations used during the
+  CMake variable to select the vector width for the operations used during the
   :cpp:class:`GenotypeTable` computation functions
   :cpp:func:`GenotypeTable::combine` and
   :cpp:func:`GenotypeTable::combine_and_popcnt`. Accepted values are: ``512``
@@ -105,6 +109,9 @@ POPCNT_IMPL
     * ``popcnt-movdq-64``
     * ``popcnt-unrolled-errata-64``
 
+  The documentation for each of these functions is available in the
+  :cpp:class:`GenotypeTable` class documentation.
+
 MI_OP_WIDTH
   Select the vector width for the operations used during the
   :cpp:class:`MutualInformation` computation function
@@ -119,6 +126,9 @@ MI_IMPL
 
   * ``if-nomask`` (default if ``AVX512BW`` is available)
   * ``if-mask`` (default if only ``AVX2`` is available)
+
+  The documentation for the two functions is available in the
+  :cpp:class:`MutualInformation` class documentation.
 
 ------------------------------------------
 Command-line usage

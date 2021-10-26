@@ -1,9 +1,18 @@
 #include <fiuncho/GenotypeTable.h>
 #include <immintrin.h>
 
-inline void popcnt(const uint64_t *gt_tbl1, const size_t gt_size,
-                   const uint64_t *gt_tbl2, const size_t words,
-                   uint32_t *ct_tbl, const size_t ct_size)
+/**
+ * @brief Implements the combination of two genotype subtables and subsequent
+ * contingency table computation. The function relies on the
+ * `_mm512_popcnt_epi64` AVX intrinsic introduced with the `AVX512VPOPCNTDQ`
+ * extension to perform the *popcount* operation.
+ */
+
+inline void avx512vpopcntdq_native_popcnt(const uint64_t *gt_tbl1,
+                                          const size_t gt_size,
+                                          const uint64_t *gt_tbl2,
+                                          const size_t words, uint32_t *ct_tbl,
+                                          const size_t ct_size)
 {
     size_t i, j, k, l;
     // Combine two genotype tables and save its contingency table
@@ -42,6 +51,8 @@ void GenotypeTable<uint64_t>::combine_and_popcnt(
     const GenotypeTable<uint64_t> &t1, const GenotypeTable<uint64_t> &t2,
     ContingencyTable<uint32_t> &out) noexcept
 {
-    popcnt(t1.cases, t1.size, t2.cases, t1.cases_words, out.cases, out.size);
-    popcnt(t1.ctrls, t1.size, t2.ctrls, t1.ctrls_words, out.ctrls, out.size);
+    avx512vpopcntdq_native_popcnt(t1.cases, t1.size, t2.cases, t1.cases_words,
+                                  out.cases, out.size);
+    avx512vpopcntdq_native_popcnt(t1.ctrls, t1.size, t2.ctrls, t1.ctrls_words,
+                                  out.ctrls, out.size);
 }
