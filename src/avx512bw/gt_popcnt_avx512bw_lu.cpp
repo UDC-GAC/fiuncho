@@ -41,7 +41,7 @@ const __m512i low_mask = _mm512_set1_epi8(0x0f);
  * @brief Implements the combination of two genotype subtables and subsequent
  * contingency table computation. The function is a fork of the function
  * ``popcnt_AVX512BW_lookup_original`` from
- * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104,
+ * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104
  * modified to interleave the genotype table combination operations with the
  * `popcount` operations.
  */

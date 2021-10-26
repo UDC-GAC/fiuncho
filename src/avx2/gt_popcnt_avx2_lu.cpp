@@ -49,7 +49,7 @@ inline void iter(const uint64_t *ptr1, const uint64_t *ptr2,
  * @brief Implements the combination of two genotype subtables and subsequent
  * contingency table computation. The function is a fork of the function
  * ``popcnt_AVX2_lookup`` from
- * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104,
+ * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104
  * modified to interleave the genotype table combination operations with the
  * `popcount` operations.
  */

@@ -35,7 +35,7 @@
  * @brief Implements the combination of two genotype subtables and subsequent
  * contingency table computation. The function is a fork of the function
  * ``builtin_popcnt_unrolled_errata`` from
- * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104,
+ * https://github.com/WojciechMula/sse-popcount/tree/6feb3dba32c526b17de01e931c116900e3a23104
  * modified to interleave the genotype table combination operations with the
  * `popcount` operations.
  */
