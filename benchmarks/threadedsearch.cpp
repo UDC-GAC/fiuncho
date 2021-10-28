@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <fiuncho/ThreadedSearch.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/MaxArray.h>
 #include <iostream>
 #include <thread>

@@ -7,7 +7,7 @@
 
 #include "utils.h"
 #include <fiuncho/GenotypeTable.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <iostream>
 
 /**

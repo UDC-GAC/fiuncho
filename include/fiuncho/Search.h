@@ -4,7 +4,7 @@
  */
 
 #include <fiuncho/Distribution.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/Result.h>
 
 #ifndef FIUNCHO_SEARCH_H

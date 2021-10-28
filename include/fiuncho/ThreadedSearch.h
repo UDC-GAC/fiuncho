@@ -11,7 +11,7 @@
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/Search.h>
 #include <fiuncho/algorithms/MutualInformation.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/MaxArray.h>
 #include <iostream>
 #include <pthread.h>

@@ -2,7 +2,7 @@
 #include <fiuncho/Distribution.h>
 #include <fiuncho/Search.h>
 #include <fiuncho/ThreadedSearch.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <gtest/gtest.h>
 
 std::string tped, tfam;

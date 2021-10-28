@@ -9,7 +9,7 @@
 #include <fiuncho/ContingencyTable.h>
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/algorithms/MutualInformation.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <iostream>
 
 void loop_mi(const int repetitions, ContingencyTable<uint32_t> *ctables,

@@ -28,7 +28,7 @@ provided in Fiuncho, and prints the number of SNPs read:
 .. code-block:: cpp
    :linenos:
 
-   #include <fiuncho/dataset/Dataset.h>
+   #include <fiuncho/Dataset.h>
    #include <iostream>
 
    int main(int argc, char **argv)

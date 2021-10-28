@@ -9,7 +9,7 @@
 #include <cmath>
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/algorithms/MutualInformation.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/MaxArray.h>
 #include <fiuncho/utils/Result.h>
 #include <fiuncho/utils/StaticStack.h>

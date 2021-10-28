@@ -1,5 +1,5 @@
 #include <bitset>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <gtest/gtest.h>
 #include <string>
 

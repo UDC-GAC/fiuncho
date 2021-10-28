@@ -1,7 +1,7 @@
 #include <bitset>
 #include <fiuncho/ContingencyTable.h>
 #include <fiuncho/GenotypeTable.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <gtest/gtest.h>
 #include <string>
 
