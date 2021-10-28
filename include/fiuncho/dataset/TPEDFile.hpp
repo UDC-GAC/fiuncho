@@ -266,8 +266,8 @@ void fill(std::unique_ptr<GenotypeTable<T>[]> &array,
 
 template <typename T>
 void read(const std::string tped, const std::string tfam, size_t &cases,
-               size_t &ctrls, size_t &snps,
-               std::unique_ptr<GenotypeTable<T>[]> &array)
+          size_t &ctrls, size_t &snps,
+          std::unique_ptr<GenotypeTable<T>[]> &array)
 {
     std::vector<Sample> samples;
     std::vector<Variant> variants;

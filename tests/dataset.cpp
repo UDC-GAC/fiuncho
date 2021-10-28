@@ -3,14 +3,9 @@
 #include <gtest/gtest.h>
 #include <string>
 
-std::string tped, tfam;
+std::string tped, tfam, rawfile;
 
-namespace
-{
-TEST(DatasetTest, Dataset)
-{
-    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(tped, tfam);
-
+auto checks = [](const Dataset<uint64_t> &dataset) {
     EXPECT_EQ(10, dataset.snps);
     EXPECT_EQ(9000, dataset.cases);
     EXPECT_EQ(9800, dataset.ctrls);
@@ -49,14 +44,29 @@ TEST(DatasetTest, Dataset)
         }
         EXPECT_EQ(dataset.ctrls, count);
     }
-}
+};
+
+namespace
+{
+TEST(Dataset, TPED)
+{
+    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(tped, tfam);
+    checks(dataset);
+};
+
+TEST(Dataset, RAW)
+{
+    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(rawfile);
+    checks(dataset);
+};
 } // namespace
 
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    assert(argc == 3); // gtest leaved unparsed arguments for you
+    assert(argc == 4); // gtest leaved unparsed arguments for you
     tped = argv[1];
     tfam = argv[2];
+    rawfile = argv[3];
     return RUN_ALL_TESTS();
 }
