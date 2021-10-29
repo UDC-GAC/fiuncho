@@ -8,11 +8,11 @@
  * terminates the execution.
  */
 
+#include <filesystem>
 #include <fiuncho/MPIEngine.h>
 #include <fiuncho/ThreadedSearch.h>
 #include <fstream>
 #include <iostream>
-#include <linux/limits.h>
 #include <tclap/CmdLine.h>
 #include <unistd.h>
 
@@ -100,7 +100,8 @@ Arguments read_arguments(int argc, char **argv)
     {
         bool check(const std::string &path) const
         {
-            return access(path.c_str(), R_OK) == 0;
+            auto absolute = std::filesystem::absolute(path);
+            return access(absolute.string().c_str(), R_OK) == 0;
         }
 
         std::string shortID() const { return "path"; }
@@ -122,22 +123,14 @@ Arguments read_arguments(int argc, char **argv)
     {
         bool check(const std::string &path) const
         {
-            if (access(path.c_str(), F_OK) == 0) { // File exists
-                return access(path.c_str(), W_OK) == 0;
+            auto absolute = std::filesystem::absolute(path);
+            auto status = std::filesystem::status(absolute);
+            // If the file exists, check if we have write perm
+            if (status.type() == std::filesystem::file_type::regular) {
+                return access(absolute.string().c_str(), W_OK) == 0;
             } else { // File does not exist
-                auto pos = path.find_last_of("/");
-                // If there are no forward slashes in the path, the path points
-                // to a file in the current directory
-                if (pos == std::string::npos) {
-                    char current_path[PATH_MAX + 1];
-                    if (getcwd(current_path, PATH_MAX + 1) == nullptr) {
-                        return false;
-                    }
-                    return access(current_path, W_OK) == 0;
-                } else {
-                    std::string parent_dir = path.substr(0, pos);
-                    return access(parent_dir.c_str(), W_OK) == 0;
-                }
+                auto parent = std::filesystem::path(absolute).parent_path();
+                return access(parent.string().c_str(), W_OK) == 0;
             }
         }
 
