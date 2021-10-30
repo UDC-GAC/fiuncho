@@ -1,7 +1,7 @@
 export COMPILER_PACKAGES="intel-basekit intel-hpckit cmake"
 export CC=icc
 export CXX=icpc
-export CFLAGS="-x${GH_MATRIX_TARGET_ARCH} -O3 -fp-model=fast -Wall"
+export CFLAGS="-O3 -fp-model=fast -Wall"
 export CXXFLAGS="${CFLAGS}"
 
 # Add Intel repo

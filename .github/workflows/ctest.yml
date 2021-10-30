@@ -5,20 +5,13 @@ on:
       - main
       - dev
 jobs:
-  build:
+  linux:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
         cc: [gcc+openmpi, intel+intelmpi, clang+mpich]
-        op-width: [512, 256, 64]
-        target-arch: [icelake-server, cascadelake, haswell]
-        exclude:
-          - op-width: 512
-            target-arch: haswell
     env:
       GH_MATRIX_CC: ${{ matrix.cc }}
-      GH_MATRIX_OP_WIDTH: ${{ matrix.op-width }}
-      GH_MATRIX_TARGET_ARCH: ${{ matrix.target-arch }}
     steps:
       - name: Display configuration
         run: |
@@ -28,7 +21,5 @@ jobs:
         uses: actions/checkout@v1
       - name: Install dependencies
         run: ./.github/scripts/prep.sh
-      - name: Build
-        run: ./.github/scripts/build.sh
-      - name: Test
-        run: ./.github/scripts/test.sh
+      - name: Build and test
+        run: ./.github/scripts/build_and_test.sh
