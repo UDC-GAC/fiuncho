@@ -8,7 +8,8 @@ downloading the source code, building the application, and using its
 command-line interface. The format used for the input data files is also
 documented.
 
-For this manual, we assume a standard Linux environment where all dependencies can be downloaded through the distribution's repositories.
+For this manual, we assume a standard Linux environment where all dependencies
+can be downloaded through the distribution's repositories.
 
 ------------------------------------------
 Downloading the source files
@@ -40,9 +41,16 @@ The requirements to build Fiuncho are:
    + MPICH :guilabel:`>=3.2`.
    + Intel MPI :guilabel:`>=19.0`.
 
-.. TIP::
+.. tip::
     Older versions of the compiler and system libraries have not been tested and
     may work fine, however the performance obtained may not be optimal.
+
+.. note::
+    Fiuncho has also been built succesfully in Windows using `MSYS2
+    <https://www.msys2.org/docs/what-is-msys2/>`_ :guilabel:`3.2.0-15` and
+    `MS-MPI
+    <https://docs.microsoft.com/en-us/message-passing-interface/microsoft-mpi>`_
+    :guilabel:`10.1.1-5`. This setup is discouraged for unexperienced users.
 
 If the requirements are met, Fiuncho can be configured and built with the
 following commands::
