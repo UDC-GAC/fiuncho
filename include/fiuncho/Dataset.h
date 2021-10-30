@@ -45,48 +45,51 @@ template <class T> class Dataset
      * @return A Dataset object
      */
 
-    static Dataset<T> read(const std::string file)
-    {
-        // Dataset inner variables
-        size_t cases, ctrls, snps;
-        std::unique_ptr<GenotypeTable<T>[]> array;
-
-        const auto ext = std::filesystem::path(file).extension().string();
-        if (ext == ".raw") {
-            // Load data
-            RawFile::read<T>(file, cases, ctrls, snps, array);
-            // Create Dataset
-            return Dataset<T>(cases, ctrls, snps, array);
-        } else {
-            throw std::runtime_error("Unrecognized input file extension " +
-                                     ext);
-        }
-    }
-
-    static Dataset<T> read(const std::string file1, const std::string file2)
+    static Dataset<T> read(const std::vector<std::string> &inputs)
     {
         // Declare inner variables
         size_t cases, ctrls, snps;
         std::unique_ptr<GenotypeTable<T>[]> array;
 
-        const auto ext1 = std::filesystem::path(file1).extension().string(),
-                   ext2 = std::filesystem::path(file2).extension().string();
-        if (ext1 == ".tped" || ext1 == ".tfam") {
-            if (ext1 == ext2 || (ext2 != ".tped" && ext2 != ".tfam")) {
-                throw std::runtime_error("Expecting a tfam file after \"" +
-                                         file1 + "\", but found a " + ext2);
-            }
-            // Load data
-            if (ext1 == ".tped") {
-                TPEDFile::read<T>(file1, file2, cases, ctrls, snps, array);
+        switch (inputs.size()) {
+        case 1: {
+            const auto file = inputs[0];
+            const auto ext = std::filesystem::path(file).extension().string();
+            if (ext == ".raw") {
+                // Load data
+                RawFile::read<T>(file, cases, ctrls, snps, array);
+                // Create Dataset
+                return Dataset<T>(cases, ctrls, snps, array);
             } else {
-                TPEDFile::read<T>(file2, file1, cases, ctrls, snps, array);
+                throw std::runtime_error("Unrecognized input file extension " +
+                                         ext);
             }
-            // Create Dataset
-            return Dataset<T>(cases, ctrls, snps, array);
-        } else {
-            throw std::runtime_error("Unrecognized input file extension " +
-                                     ext1);
+        }
+        case 2: {
+            const auto file1 = inputs[0], file2 = inputs[1];
+            const auto ext1 = std::filesystem::path(file1).extension().string(),
+                       ext2 = std::filesystem::path(file2).extension().string();
+            if (ext1 == ".tped" || ext1 == ".tfam") {
+                if (ext1 == ext2 || (ext2 != ".tped" && ext2 != ".tfam")) {
+                    throw std::runtime_error("Expecting a tfam file after \"" +
+                                             file1 + "\", but found a " + ext2);
+                }
+                // Load data
+                if (ext1 == ".tped") {
+                    TPEDFile::read<T>(file1, file2, cases, ctrls, snps, array);
+                } else {
+                    TPEDFile::read<T>(file2, file1, cases, ctrls, snps, array);
+                }
+                // Create Dataset
+                return Dataset<T>(cases, ctrls, snps, array);
+            } else {
+                throw std::runtime_error("Unrecognized input file extension " +
+                                         ext1);
+            }
+        }
+        default:
+            throw std::runtime_error("Unrecognized number of input files to "
+                                     "Dataset factory constructor");
         }
     }
 

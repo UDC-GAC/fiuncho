@@ -12,7 +12,7 @@ namespace
 TEST(ThreadedSearchTest, Main)
 {
     // Run ThreadedSearch
-    const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+    const auto dataset = Dataset<uint64_t>::read({tped, tfam});
 
     std::vector<int> thread_count_vector{1, 32};
     for (auto t : thread_count_vector) {

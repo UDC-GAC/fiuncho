@@ -138,7 +138,7 @@ Fiuncho can be invoked as follows::
 
    fiuncho [-h] [--version] [-n <integer>]
            [-t <integer>] -o <integer>
-           tped tfam output
+           files...
 
 
 Note that Fiuncho is an MPI program, and as such, it should be called through
@@ -175,15 +175,9 @@ Named arguments
 Positional arguments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tped
-    **Required.** First positional argument indicating the path to the tped data
-    file.
-tfam
-    **Required.** Second positional argument indicating the path to the tfam
-    data file.
-output
-    **Required.** Third positional argument indicating the path to the output
-    file.
+files...
+    **Required.** List of strings indicating the path of every input and output
+    file. Input files go first in any order, output file goes last.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Example

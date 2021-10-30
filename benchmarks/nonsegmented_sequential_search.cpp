@@ -111,7 +111,7 @@ std::vector<double> search(const std::string tped, const std::string tfam,
                            const std::vector<int> &affinity)
 {
     // Prepare input and output variables
-    const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+    const auto dataset = Dataset<uint64_t>::read({tped, tfam});
     MaxArray<Result<int, float>> result(10);
     // Measure search time
     return multithread_pinned_time(affinity, stack_search, dataset, order,

@@ -41,7 +41,7 @@ std::vector<double> bench_mi(const std::string tped, const std::string tfam,
                              const std::vector<int> &affinity,
                              const int repetitions)
 {
-    const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+    const auto dataset = Dataset<uint64_t>::read({tped, tfam});
     const size_t snp_count = dataset.snps, cases_words = dataset[0].cases_words,
                  ctrls_words = dataset[0].ctrls_words;
     // Initialize contingency tables outside of the main loop

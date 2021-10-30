@@ -107,8 +107,8 @@ class MPIEngine
 
     template <typename T, typename... Args>
     std::vector<Result<int, float>>
-    run(const std::string &tped, const std::string &tfam,
-        const unsigned int order, const unsigned int outputs, Args &&...args)
+    run(const std::vector<std::string> &inputs, const unsigned int order,
+        const unsigned int outputs, Args &&...args)
     {
         std::vector<Result<int, float>> local_results, global_results;
 #ifdef BENCHMARK
@@ -116,7 +116,7 @@ class MPIEngine
         function_time = MPI_Wtime();
         dataset_time = MPI_Wtime();
 #endif
-        const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+        const auto dataset = Dataset<uint64_t>::read(inputs);
         // Check Dataset size to avoid int overflow
         if (dataset.snps > (size_t)std::numeric_limits<int>::max()) {
             throw std::runtime_error(

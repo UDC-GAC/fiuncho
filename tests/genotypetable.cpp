@@ -11,7 +11,7 @@ namespace
 {
 TEST(GenotypeTableTest, fill)
 {
-    const auto d = Dataset<uint64_t>::read(tped, tfam);
+    const auto d = Dataset<uint64_t>::read({tped, tfam});
     const auto &t1 = d[0];
     const auto &t2 = d[1];
     GenotypeTable<uint64_t> result(2, t1.cases_words, t1.ctrls_words);
@@ -38,7 +38,7 @@ TEST(GenotypeTableTest, fill)
 
 TEST(GenotypeTableTest, popcnt)
 {
-    const auto d = Dataset<uint64_t>::read(tped, tfam);
+    const auto d = Dataset<uint64_t>::read({tped, tfam});
 
     GenotypeTable<uint64_t> gt(2, d[0].cases_words, d[0].ctrls_words);
     GenotypeTable<uint64_t>::combine(d[0], d[1], gt);

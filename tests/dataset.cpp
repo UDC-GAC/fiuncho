@@ -50,13 +50,13 @@ namespace
 {
 TEST(Dataset, TPED)
 {
-    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(tped, tfam);
+    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read({tped, tfam});
     checks(dataset);
 };
 
 TEST(Dataset, RAW)
 {
-    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read(rawfile);
+    const Dataset<uint64_t> dataset = Dataset<uint64_t>::read({rawfile});
     checks(dataset);
 };
 } // namespace

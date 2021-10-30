@@ -40,7 +40,7 @@ provided in Fiuncho, and prints the number of SNPs read:
       const std::string tped(argv[1]);
       const std::string tfam(argv[2]);
       // Read data
-      const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+      const auto dataset = Dataset<uint64_t>::read({tped, tfam});
       // Print the number of SNPs read
       std::cout << dataset.snps << std::endl;
       // Exit

@@ -17,7 +17,8 @@
 #include <unistd.h>
 
 typedef struct {
-    std::string tped, tfam, output;
+    std::vector<std::string> inputs;
+    std::string output;
     short order, threads;
     unsigned int noutputs;
 } Arguments;
@@ -96,60 +97,40 @@ Arguments read_arguments(int argc, char **argv)
                                   "default, it outputs 10 combinations.",
                                   false, 10, &noutputs_constraint);
     cmd.add(noutputs);
-    class : public TCLAP::Constraint<std::string>
-    {
-        bool check(const std::string &path) const
-        {
-            auto absolute = std::filesystem::absolute(path);
-            return access(absolute.string().c_str(), R_OK) == 0;
-        }
-
-        std::string shortID() const { return "path"; }
-
-        std::string description() const
-        {
-            return "path points to a readable file";
-        }
-    } infile_constraint;
-    TCLAP::UnlabeledValueArg<std::string> tped(
-        "tped", "Path to the input tped data file.", true, "",
-        &infile_constraint);
-    cmd.add(tped);
-    TCLAP::UnlabeledValueArg<std::string> tfam(
-        "tfam", "Tath to the input tfam data file.", true, "",
-        &infile_constraint);
-    cmd.add(tfam);
-    class : public TCLAP::Constraint<std::string>
-    {
-        bool check(const std::string &path) const
-        {
-            auto absolute = std::filesystem::absolute(path);
-            auto status = std::filesystem::status(absolute);
-            // If the file exists, check if we have write perm
-            if (status.type() == std::filesystem::file_type::regular) {
-                return access(absolute.string().c_str(), W_OK) == 0;
-            } else { // File does not exist
-                auto parent = std::filesystem::path(absolute).parent_path();
-                return access(parent.string().c_str(), W_OK) == 0;
-            }
-        }
-
-        std::string shortID() const { return "path"; }
-
-        std::string description() const
-        {
-            return "path points to a writeable location";
-        }
-    } outfile_constraint;
-    TCLAP::UnlabeledValueArg<std::string> output(
-        "output", "Path to the output file.", true, "", &outfile_constraint);
-    cmd.add(output);
+    TCLAP::UnlabeledMultiArg<std::string> files(
+        "files", "input and output files (output goes last)", true,
+        "list of string");
+    cmd.add(files);
     // Read
     Arguments args;
     cmd.parse(argc, argv);
-    args.tped = tped.getValue();
-    args.tfam = tfam.getValue();
-    args.output = output.getValue();
+    args.inputs = files.getValue();
+    args.output = args.inputs.back();
+    args.inputs.pop_back();
+    // Check that all input files are readable
+    std::for_each(args.inputs.begin(), args.inputs.end(),
+                  [](const std::string &path) {
+                      auto absolute = std::filesystem::absolute(path);
+                      if (access(absolute.string().c_str(), R_OK) != 0)
+                          throw std::runtime_error("Cannot read file \"" +
+                                                   absolute.string() + "\"");
+                  });
+    // Check that the output file is writeable
+    [](const std::string &path) {
+        auto absolute = std::filesystem::absolute(path);
+        auto status = std::filesystem::status(absolute);
+        // If the file exists, check if we have write perm
+        if (status.type() == std::filesystem::file_type::regular) {
+            if (access(absolute.string().c_str(), W_OK) != 0)
+                throw std::runtime_error("File \"" + absolute.string() +
+                                         "\" is not writeable");
+        } else { // File does not exist
+            auto parent = std::filesystem::path(absolute).parent_path();
+            if (access(parent.string().c_str(), W_OK) != 0)
+                throw std::runtime_error("Cannot write into directory \"" +
+                                         parent.string() + "\"");
+        }
+    }(args.output);
     args.order = order.getValue();
     args.threads = threads.getValue();
     args.noutputs = noutputs.getValue();
@@ -166,8 +147,8 @@ int main(int argc, char **argv)
         auto args = read_arguments(argc, argv);
         // Execute search
         MPIEngine engine;
-        auto results = engine.run<ThreadedSearch>(
-            args.tped, args.tfam, args.order, args.noutputs, args.threads);
+        auto results = engine.run<ThreadedSearch>(args.inputs, args.order,
+                                                  args.noutputs, args.threads);
         if (rank == 0) {
             // Write results to the output file
             std::ofstream of(args.output, std::ios::out);
