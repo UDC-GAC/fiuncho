@@ -50,7 +50,8 @@ create_gtest(test_dataset dataset.cpp test_dataset_bin
     test_dataset_bin
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tped"
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tfam"
-    "${CMAKE_CURRENT_LIST_DIR}/data/test.raw")
+    "${CMAKE_CURRENT_LIST_DIR}/data/test.raw"
+    "${CMAKE_CURRENT_LIST_DIR}/data/test.gametes.raw")
 create_gtest(test_genotypetable genotypetable.cpp test_genotypetable_bin
     test_genotypetable_bin
     "${CMAKE_CURRENT_LIST_DIR}/data/test.tped"

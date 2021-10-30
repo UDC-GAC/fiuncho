@@ -6,10 +6,7 @@
 #include <algorithm>
 #include <fiuncho/Dataset.h>
 #include <fstream>
-#include <sstream>
-#include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace TPEDFile
 {
@@ -20,7 +17,7 @@ class Variant
     std::string v_id;     // Variant identifier
     double pos;           // Position in morgans or centimorgans
     unsigned int coord;   // Base-pair coordinate
-    std::vector<uint8_t> genotypes;
+    std::vector<char> alleles;
 
     friend std::istream &operator>>(std::istream &str, Variant &v)
     {
@@ -38,34 +35,16 @@ class Variant
             // Read nucleotides
             char c;
             while (iss >> c && (c == 'A' || c == 'C' || c == 'T' || c == 'G')) {
-                nucleotides.push_back(c);
+                tmp.alleles.push_back(c);
             }
-
             if (!iss.eof()) {
                 throw std::runtime_error(
                     std::string("invalid nucleotide value '") + c +
                     "' at position " + std::to_string(iss.tellg()));
             }
-
-            if (nucleotides.size() % 2) {
+            if (tmp.alleles.size() % 2) {
                 throw std::runtime_error("odd number of nucleotides");
             }
-
-            // Find minor character
-            char a1 = nucleotides[0];
-            auto pos = std::find_if(nucleotides.begin(), nucleotides.end(),
-                                    [&a1](char n) { return n != a1; });
-            char a2 = pos == nucleotides.end() ? a1 : *pos;
-            a1 = std::min(a1, a2);
-
-            // Translate nucleotides into genotype
-            tmp.genotypes.reserve(nucleotides.size() / 2);
-            uint8_t allele;
-            for (auto it = nucleotides.begin(); it < nucleotides.end();) {
-                allele = (*(it++) != a1) + (*(it++) != a1);
-                tmp.genotypes.push_back(allele);
-            }
-
             v.swap(tmp);
         }
         return str;
@@ -77,7 +56,7 @@ class Variant
         std::swap(v_id, other.v_id);
         std::swap(pos, other.pos);
         std::swap(coord, other.coord);
-        std::swap(genotypes, other.genotypes);
+        std::swap(alleles, other.alleles);
     }
 };
 
@@ -161,7 +140,7 @@ void read_variants(const std::string &tped, const std::vector<Sample> &samples,
     try {
         Variant v;
         while (file >> v) {
-            if (v.genotypes.size() == samples.size()) {
+            if (v.alleles.size() == 2 * samples.size()) {
                 variants.push_back(v);
             } else {
                 throw std::runtime_error(
@@ -189,6 +168,16 @@ void fill(std::unique_ptr<GenotypeTable<T>[]> &array,
     // Buffers
     T cases_buff[3], ctrls_buff[3];
     for (size_t i = 0; i < variants.size(); i++) {
+        // Find minor allele
+        std::map<char, size_t> count;
+        std::for_each(variants[i].alleles.begin(), variants[i].alleles.end(),
+                      [&count](const char &c) {
+                          count.find(c) == count.end() ? count[c] = 1
+                                                       : count[c] += 1;
+                      });
+        char a1 = count.begin()->first;
+        char a2 = (++count.begin())->first;
+        char minor = count[a1] > count[a2] ? a2 : a1;
         // Clear buffers
         for (auto k = 0; k < 3; k++) {
             cases_buff[k] = 0;
@@ -200,18 +189,19 @@ void fill(std::unique_ptr<GenotypeTable<T>[]> &array,
         size_t cases_cnt = 0;
         size_t ctrls_cnt = 0;
         for (size_t j = 0; j < samples.size(); j++) {
+            // Transform alleles into minor allele count
+            short c = (variants[i].alleles[j * 2] == minor) +
+                      (variants[i].alleles[j * 2 + 1] == minor);
             // For each sample, check phenotype class
             if (samples[j].ph == 1) { // If it's a control append genotype to
                 // the 3 control buffers
                 for (auto k = 0; k < 3; k++) {
-                    ctrls_buff[k] =
-                        (ctrls_buff[k] << 1) + (variants[i].genotypes[j] == k);
+                    ctrls_buff[k] = (ctrls_buff[k] << 1) + (c == k);
                 }
                 ctrls_cnt++;
             } else { // Else append genotype to the 3 cases buffers
                 for (auto k = 0; k < 3; k++) {
-                    cases_buff[k] =
-                        (cases_buff[k] << 1) + (variants[i].genotypes[j] == k);
+                    cases_buff[k] = (cases_buff[k] << 1) + (c == k);
                 }
                 cases_cnt++;
             }

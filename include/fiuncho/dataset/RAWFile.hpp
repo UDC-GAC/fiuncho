@@ -74,18 +74,15 @@ class Sample
                 read_ok = read_ok && iss >> tmp.sex;
             }
             for (size_t i = 0; i < s.read_mask.size(); ++i) {
+                short val;
+                read_ok = read_ok && iss >> val;
                 if (s.read_mask[i]) {
                     if (i == s.phenotype_index) {
-                        read_ok = read_ok && iss >> tmp.ph;
                         // If info is missing, phenotype is in {0,1} and needs
                         // to be added 1
-                        if (!s.has_info) {
-                            ++tmp.ph;
-                        }
+                        tmp.ph = val + !s.has_info;
                     } else {
-                        short variant;
-                        read_ok = read_ok && iss >> variant;
-                        tmp.variants.push_back(variant);
+                        tmp.variants.push_back(val);
                     }
                 }
             }
