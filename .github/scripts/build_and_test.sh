@@ -8,7 +8,8 @@ source ./.github/vars/$(echo ${GH_MATRIX_CC} | cut -d'+' -f2).sh
 # Declare configurations
 declare -A cmake_config=(\
     ["icelake-server"]="\
-        512,popcnt-512,512"\
+        512,popcnt-512,512,\
+        64,,64,"\
     ["cascadelake"]="\
         512,harley-seal-512,,\
         512,lookup-512,,\
@@ -18,14 +19,16 @@ declare -A cmake_config=(\
         512,lookup-256,,\
         512,popcnt-movdq-64,,\
         512,popcnt-unrolled-errata-64,,\
-        ,,256,if-mask"\
+        ,,256,if-mask\
+        64,,64,"\
     ["haswell"]="\
         256,cpu-256,,\
         256,harley-seal-256,,\
         256,lookup-256,,\
         256,lookup-original-256,,\
         256,popcnt-movdq-64,,\
-        256,popcnt-unrolled-errata-64,,")
+        256,popcnt-unrolled-errata-64,,\
+        64,,64,")
 declare -A sde_arch_flag=(\
     ["icelake-server"]="-icx"\
     ["cascadelake"]="-clx"\
