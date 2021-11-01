@@ -2,13 +2,18 @@
 
 ![](https://img.shields.io/badge/C++-17-blue.svg?style=flat&logo=c%2B%2B)
 ![](https://img.shields.io/github/license/UDC-GAC/fiuncho?color=blue)
-[![Build Status](https://img.shields.io/github/workflow/status/chponte/fiuncho/CMake%20Build%20Matrix/dev)](https://github.com/UDC-GAC/fiuncho/actions/workflows/cmake.yml)
-[![Documentation Status](https://readthedocs.org/projects/fiuncho/badge/?version=latest)](https://fiuncho.readthedocs.io/en/latest/?badge=latest)
+[![CTest](https://github.com/UDC-GAC/fiuncho/actions/workflows/ctest.yml/badge.svg?branch=dev)](https://github.com/UDC-GAC/fiuncho/actions/workflows/ctest.yml)
+[![Documentation Status](https://readthedocs.org/projects/fiuncho/badge/?version=dev)](https://fiuncho.readthedocs.io/en/dev/?badge=dev)
 
 Fiuncho is an epistasis detection program, implementing an exhaustive search of
-epistasis interactions of any given size. Fiuncho offers multiple implementations,
-featuring AVX Intrinsics from different AVX extension sets, to support a wide
-variety of CPUs.
+epistasis interactions of any given size. Fiuncho uses a
+[SPMD](https://en.wikipedia.org/wiki/SPMD) (Single Program, Multiple Data)
+approach to accelerate the computation, exploiting the multiple cores available
+to a processor, or the multiple processors available in a cluster environment.
+Furthermore, Fiuncho takes advantage of the
+[SIMD](https://en.wikipedia.org/wiki/SIMD) (Single Instruction, Multiple Data)
+vector operations available to each CPU core, offering multiple *AVX*
+implementations to support a wide variety of *x86_64* processors.
 
 ## Documentation
 

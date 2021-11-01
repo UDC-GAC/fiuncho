@@ -1,7 +1,6 @@
 /**
  * @file Dataset.h
- * @author Christian Ponte
- * @brief Declares and implements the Dataset class
+ * @date 01/11/2021
  */
 
 #ifndef FIUNCHO_DATASET_H
@@ -40,8 +39,9 @@ template <class T> class Dataset
      * underlying arrays used in the different tables are allocated contiguously
      * in memory.
      *
-     * @param tped Path to the tped input file
-     * @param tfam Path to the tfam input file
+     * @param inputs List of files to read (in any order). Supported files are:
+     *      1. <code>tped</code> + <code>tfam</code> files
+     *      2. <code>raw</code> files
      * @return A Dataset object
      */
 

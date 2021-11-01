@@ -1,4 +1,7 @@
-// https://www.cog-genomics.org/plink/1.9/formats#raw
+/**
+ * @file RAWFile.hpp
+ * @date 01/11/2021
+ */
 
 #ifndef FIUNCHO_RAWFILE_HPP
 #define FIUNCHO_RAWFILE_HPP
@@ -11,6 +14,23 @@
 
 namespace RawFile
 {
+
+/**
+ * @brief Class representing a single sample from a raw file, implementing the
+ * operator>> function for convenient reading. Supports both conventional raw
+ * files, as defined by PLINK
+ * (https://www.cog-genomics.org/plink/1.9/formats#raw), and GAMETES "raw"
+ * files. Relies heavily on the header fields to identify columns to read, and
+ * whether or not it is a conventional raw file or if it comes from GAMETES:
+ *      1. A sample is from GAMETES if it contains no sample information,
+ *      2. Genotype fields contain either no '_', or the '_' is followed by a
+ *         {A,C,G,T}.
+ *      3. Phenotype column is named "PHENOTYPE" for raw files, and "Class" for
+ *         GAMETES.
+ *      4. Phenotype for raw files uses '1' for controls, and '2' for cases.
+ *         GAMETES uses '0' for controls, and '1' for cases.
+ */
+
 class Sample
 {
   public:

@@ -1,4 +1,7 @@
-// https://www.cog-genomics.org/plink/1.9/formats#tped
+/**
+ * @file TPEDFile.hpp
+ * @date 01/11/2021
+ */
 
 #ifndef FIUNCHO_TPEDFILE_HPP
 #define FIUNCHO_TPEDFILE_HPP
@@ -10,6 +13,12 @@
 
 namespace TPEDFile
 {
+
+/**
+ * @brief Class representing a variant from a TPED file, as defined by PLINK
+ * (https://www.cog-genomics.org/plink/1.9/formats#tped).
+ */
+
 class Variant
 {
   public:
@@ -59,6 +68,11 @@ class Variant
         std::swap(alleles, other.alleles);
     }
 };
+
+/**
+ * @brief Class representing a sample from a TFAM file, as defined by PLINK
+ * (https://www.cog-genomics.org/plink/1.9/formats#tfam)
+ */
 
 class Sample
 {
