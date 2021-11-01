@@ -276,8 +276,8 @@ void read(const std::string rawfile, size_t &cases, size_t &ctrls, size_t &snps,
     std::vector<Sample> samples;
     read_samples(rawfile, samples, cases, ctrls);
     snps = samples[0].variants.size();
-    // Allocate enough space for representing all SNPs for all individuals
 #ifdef ALIGN
+    // Pad table rows so that each row is divisible by the VPU width
     constexpr size_t NT = ALIGN / sizeof(T); // Number of T's in ALIGN bytes
     constexpr size_t NBITS = ALIGN * 8;      // Number of bits in ALIGN bytes
     const size_t cases_words = (cases + NBITS - 1) / NBITS * NT,

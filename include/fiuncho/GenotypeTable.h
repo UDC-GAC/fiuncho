@@ -13,6 +13,12 @@
 #include <cstdint>
 #include <memory>
 
+// The Intel C++ Classic Compiler does not implement the new C++17 aligned new
+// function; instead, the function is defined in a different header file
+#if defined(__INTEL_COMPILER)
+#include <aligned_new>
+#endif
+
 /**
  * @class GenotypeTable
  * @brief Class representing the genotypes of \a M individuals using a binary
@@ -59,17 +65,14 @@ template <class T> class GenotypeTable
         : order(order), size(std::pow(3, order)), cases_words(cases_words),
           ctrls_words(ctrls_words),
 #ifdef ALIGN
-#define N (ALIGN / sizeof(T))
-          alloc(new T[size * (cases_words + ctrls_words) + N],
+          alloc(new (std::align_val_t(ALIGN))
+                    T[size * (cases_words + ctrls_words)],
                 std::default_delete<T[]>()),
-#undef N
-          cases((T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN)),
 #else
           alloc(new T[size * (cases_words + ctrls_words)],
                 std::default_delete<T[]>()),
-          cases(alloc.get()),
 #endif
-          ctrls(cases + size * cases_words){};
+          cases(alloc.get()), ctrls(cases + size * cases_words){};
 
     static std::unique_ptr<GenotypeTable<T>[]>
     make_array(const size_t N, const short order, const size_t cases_words,

@@ -11,6 +11,12 @@
 #include <cstdint>
 #include <memory>
 
+// The Intel C++ Classic Compiler does not implement the new C++17 aligned new
+// function; instead, the function is defined in a different header file
+#if defined(__INTEL_COMPILER)
+#include <aligned_new>
+#endif
+
 /**
  * @class ContingencyTable
  * @brief Class representing the genotypes frequencies of the combination of \a
@@ -48,18 +54,15 @@ template <class T> class ContingencyTable
         :
 #ifdef ALIGN
 #define N (ALIGN / sizeof(T))
-#define NBITS (ALIGN * 8)
           size((size_t)(std::pow(3, order) + N - 1) / N * N),
-          alloc(new T[size * 2 + N], std::default_delete<T[]>()),
+          alloc(new (std::align_val_t(ALIGN)) T[size * 2],
+                std::default_delete<T[]>()),
 #undef N
-#undef NBITS
-          cases((T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN)),
 #else
           size(std::pow(3, order)),
           alloc(new T[size * 2], std::default_delete<T[]>()),
-          cases(alloc.get()),
 #endif
-          ctrls(cases + size){};
+          cases(alloc.get()), ctrls(cases + size){};
 
     static std::unique_ptr<ContingencyTable<T>[]>
     make_array(const size_t N, const short order) {
