@@ -1,20 +1,3 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
  * @file MutualInformation.h
  * @author Christian Ponte
@@ -24,6 +7,8 @@
 #define FIUNCHO_MUTUALINFORMATION_H
 
 #include <fiuncho/algorithms/Algorithm.h>
+
+#include <cmath>
 
 /**
  * @class MutualInformation
@@ -51,8 +36,8 @@
  * @tparam T data type used to represent the MI values
  */
 
-template <class T>
-class MutualInformation : public Algorithm<T> {
+template <class T> class MutualInformation : public Algorithm<T>
+{
   public:
     /**
      * @name Constructors
@@ -70,7 +55,14 @@ class MutualInformation : public Algorithm<T> {
      * @param num_ctrls Path to the tfam data file
      */
 
-    MutualInformation(unsigned int num_cases, unsigned int num_ctrls);
+    MutualInformation(unsigned int num_cases, unsigned int num_ctrls)
+    {
+        inv_inds = 1.0 / (num_cases + num_ctrls);
+        float p = num_cases * inv_inds;
+        h_y = (-1.0) * p * logf(p);
+        p = num_ctrls * inv_inds;
+        h_y -= p * logf(p);
+    };
 
     //@}
 

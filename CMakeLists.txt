@@ -1,25 +1,9 @@
-# This file is part of Fiuncho.
-# Copyright (C) 2019 by Christian Ponte
-#
-# Fiuncho is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Fiuncho is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Fiuncho. If not, see <http://www.gnu.org/licenses/>.
-
 ############################### CMake variables  ###############################
 
 cmake_minimum_required(VERSION 3.11)
 cmake_policy(SET CMP0074 NEW)
-project(Fiuncho VERSION 1 LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 14)
+project(Fiuncho VERSION 2 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/)
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})

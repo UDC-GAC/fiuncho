@@ -1,23 +1,6 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 #include <cstdint>
 #include <fiuncho/ThreadedSearch.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/MaxArray.h>
 #include <iostream>
 #include <thread>
@@ -58,11 +41,7 @@ int main(int argc, char *argv[])
     const unsigned short order = atoi(argv[2]);
     const std::string tped = argv[3], tfam = argv[4];
     // Data
-#ifdef ALIGN
-    const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
-    const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
+    const auto dataset = Dataset<uint64_t>::read({tped, tfam});
     Distribution<int> distribution(dataset.snps, order - 1, 1, 0);
     auto search = ThreadedSearch(thread_count);
     search.run(dataset, order, distribution, 10);

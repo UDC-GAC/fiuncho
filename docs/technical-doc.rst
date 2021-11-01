@@ -28,7 +28,7 @@ provided in Fiuncho, and prints the number of SNPs read:
 .. code-block:: cpp
    :linenos:
 
-   #include <fiuncho/dataset/Dataset.h>
+   #include <fiuncho/Dataset.h>
    #include <iostream>
 
    int main(int argc, char **argv)
@@ -40,7 +40,7 @@ provided in Fiuncho, and prints the number of SNPs read:
       const std::string tped(argv[1]);
       const std::string tfam(argv[2]);
       // Read data
-      const auto dataset = Dataset<uint64_t>::read(tped, tfam);
+      const auto dataset = Dataset<uint64_t>::read({tped, tfam});
       // Print the number of SNPs read
       std::cout << dataset.snps << std::endl;
       // Exit
@@ -71,33 +71,135 @@ Classes documentation
 -----------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Core functionality
+Dataset class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenclass:: Dataset
    :members:
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+GenotypeTable class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. doxygenclass:: GenotypeTable
    :members:
 
+Function :cpp:func:`GenotypeTable::combine_and_popcnt` has multiple
+implementations:
+
+* File ``src/avx512vpopcntdq/gt_popcnt.cpp``:
+
+  .. doxygenfile:: src/avx512vpopcntdq/gt_popcnt.cpp
+     :sections: func user-defined
+
+* File ``src/avx512bw/gt_popcnt_avx512bw_hs.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx512bw_hs.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_avx512bw_lu.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx512bw_lu.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_avx2_cpu.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx2_cpu.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_avx2_hs.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx2_hs.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_avx2_lu.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx2_lu.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_avx2_lu_orig.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_avx2_lu_orig.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_native_movdq.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_native_movdq.cpp
+     :sections: func
+
+* File ``src/avx512bw/gt_popcnt_native_unrolled_errata.cpp``:
+
+  .. doxygenfile:: src/avx512bw/gt_popcnt_native_unrolled_errata.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_avx2_cpu.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_avx2_cpu.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_avx2_hs.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_avx2_hs.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_avx2_lu.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_avx2_lu.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_avx2_lu_orig.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_avx2_lu_orig.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_native_movdq.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_native_movdq.cpp
+     :sections: func
+
+* File ``src/avx2/gt_popcnt_native_unrolled_errata.cpp``:
+
+  .. doxygenfile:: src/avx2/gt_popcnt_native_unrolled_errata.cpp
+     :sections: func
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ContingencyTable class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. doxygenclass:: ContingencyTable
    :members:
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MutualInformation class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenclass:: MutualInformation
    :members:
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Distributed algorithm
+Distribution class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenclass:: Distribution
    :members:
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MPIEngine class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. doxygenclass:: MPIEngine
    :members:
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Search class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. doxygenclass:: Search
    :members:
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ThreadedSearch class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenclass:: ThreadedSearch
    :members:

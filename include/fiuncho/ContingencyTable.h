@@ -1,20 +1,3 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
  * @file ContingencyTable.h
  * @author Christian Ponte
@@ -23,9 +6,16 @@
 #ifndef FIUNCHO_CONTINGENCYTABLE_H
 #define FIUNCHO_CONTINGENCYTABLE_H
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+
+// The Intel C++ Classic Compiler does not implement the new C++17 aligned new
+// function; instead, the function is defined in a different header file
+#if defined(__INTEL_COMPILER)
+#include <aligned_new>
+#endif
 
 /**
  * @class ContingencyTable
@@ -44,6 +34,10 @@ template <class T> class ContingencyTable
     ContingencyTable(const ContingencyTable<T> &) = delete;
     ContingencyTable(ContingencyTable<T> &&) = default;
 
+    ContingencyTable() : size(0), alloc(nullptr), cases(nullptr), ctrls(nullptr)
+    {
+    }
+
     /**
      * @name Constructors
      */
@@ -56,8 +50,44 @@ template <class T> class ContingencyTable
      * @param order Number of SNPs represented in combination inside the table
      */
 
-    ContingencyTable(const short order, const size_t cases_words,
-                     const size_t ctrls_words);
+    ContingencyTable(const short order)
+        :
+#ifdef ALIGN
+#define N (ALIGN / sizeof(T))
+          size((size_t)(std::pow(3, order) + N - 1) / N * N),
+          alloc(new (std::align_val_t(ALIGN)) T[size * 2],
+                std::default_delete<T[]>()),
+#undef N
+#else
+          size(std::pow(3, order)),
+          alloc(new T[size * 2], std::default_delete<T[]>()),
+#endif
+          cases(alloc.get()), ctrls(cases + size){};
+
+    static std::unique_ptr<ContingencyTable<T>[]>
+    make_array(const size_t N, const short order) {
+    // Allocate a single contiguous array for all subtables
+#ifdef ALIGN
+        constexpr size_t NT = ALIGN / sizeof(T);
+        const size_t size = (size_t)(std::pow(3, order) + NT - 1) / NT * NT;
+        std::shared_ptr<T> alloc(new T[N * size * 2 + NT],
+                                 std::default_delete<T[]>());
+        T *ptr = (T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN);
+#else
+        const size_t size = std::pow(3, order);
+        std::shared_ptr<T> alloc(new T[N * size * 2],
+                                 std::default_delete<T[]>());
+        T *ptr = alloc.get();
+#endif
+        // Allocate the ContingencyTable object array
+        auto array = std::make_unique<ContingencyTable<T>[]>(N);
+        // Initialize ContingencyTable objects
+        for (size_t i = 0; i < N; ++i) {
+            new (array.get() + i) ContingencyTable(
+                size, alloc, ptr + i * size * 2, ptr + i * size * 2 + size);
+        }
+        return array;
+    }
 
     //@}
 
@@ -71,10 +101,14 @@ template <class T> class ContingencyTable
      */
     const size_t size;
 
-    const size_t cases_words, ctrls_words;
-
   private:
-    std::unique_ptr<T[]> alloc;
+    ContingencyTable(const size_t size, std::shared_ptr<T> alloc, T *cases,
+                     T *ctrls)
+        : size(size), alloc(alloc), cases(cases), ctrls(ctrls)
+    {
+    }
+
+    std::shared_ptr<T> alloc;
 
   public:
     /**

@@ -1,20 +1,3 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
  * @file GenotypeTable.h
  * @author Christian Ponte
@@ -25,9 +8,16 @@
 
 #include <fiuncho/ContingencyTable.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+
+// The Intel C++ Classic Compiler does not implement the new C++17 aligned new
+// function; instead, the function is defined in a different header file
+#if defined(__INTEL_COMPILER)
+#include <aligned_new>
+#endif
 
 /**
  * @class GenotypeTable
@@ -49,29 +39,14 @@ template <class T> class GenotypeTable
     GenotypeTable(const GenotypeTable<T> &) = delete;
     GenotypeTable(GenotypeTable<T> &&) = default;
 
+    GenotypeTable()
+        : order(0), size(0), cases_words(0), ctrls_words(0), alloc(nullptr),
+          cases(nullptr), ctrls(nullptr){};
+
     /**
      * @name Constructors
      */
     //@{
-
-    /**
-     * Create a table representing a single SNP, using the array allocations
-     * provided.
-     *
-     * @param cases Array allocation for all rows of the individuals from the
-     * cases group
-     * @param cases_words Number of values of type \a T required to represent
-     * the genotypes for all individuals in the case group
-     * @param ctrls Array allocation for all rows of the individuals from the
-     * controls group
-     * @param ctrls_words Number of values of type \a T required to represent
-     * the genotypes for all individuals in the control group
-     */
-
-    GenotypeTable(T *cases, const size_t cases_words, T *ctrls,
-                  const size_t ctrls_words)
-        : order(1), size(3), cases_words(cases_words), ctrls_words(ctrls_words),
-          alloc(nullptr), cases(cases), ctrls(ctrls){};
 
     /**
      * Create a new uninitialized table, allocating an array with enough space
@@ -86,7 +61,46 @@ template <class T> class GenotypeTable
      */
 
     GenotypeTable(const short order, const size_t cases_words,
-                  const size_t ctrls_words);
+                  const size_t ctrls_words)
+        : order(order), size(std::pow(3, order)), cases_words(cases_words),
+          ctrls_words(ctrls_words),
+#ifdef ALIGN
+          alloc(new (std::align_val_t(ALIGN))
+                    T[size * (cases_words + ctrls_words)],
+                std::default_delete<T[]>()),
+#else
+          alloc(new T[size * (cases_words + ctrls_words)],
+                std::default_delete<T[]>()),
+#endif
+          cases(alloc.get()), ctrls(cases + size * cases_words){};
+
+    static std::unique_ptr<GenotypeTable<T>[]>
+    make_array(const size_t N, const short order, const size_t cases_words,
+               const size_t ctrls_words) {
+        const size_t size = std::pow(3, order);
+        // Allocate a single contiguous array for all subtables
+#ifdef ALIGN
+        std::shared_ptr<T> alloc(
+            new T[N * size * (cases_words + ctrls_words) + (ALIGN / sizeof(T))],
+            std::default_delete<T[]>());
+        T *ptr = (T *)((((uintptr_t)alloc.get()) + ALIGN - 1) / ALIGN * ALIGN);
+#else
+        std::shared_ptr<T> alloc(new T[N * size * (cases_words + ctrls_words)],
+                                 std::default_delete<T[]>());
+        T *ptr = alloc.get();
+#endif
+        // Allocate the GenotypeTable object array
+        auto array = std::make_unique<GenotypeTable<T>[]>(N);
+        // Initialize GenotypeTable objects
+        for (size_t i = 0; i < N; ++i) {
+            new (array.get() + i)
+                GenotypeTable<T>(order, cases_words, ctrls_words, alloc,
+                                 ptr + i * size * (cases_words + ctrls_words),
+                                 ptr + i * size * (cases_words + ctrls_words) +
+                                     size * cases_words);
+        }
+        return array;
+    }
 
     //@}
 
@@ -153,7 +167,29 @@ template <class T> class GenotypeTable
     const size_t ctrls_words;
 
   private:
-    std::unique_ptr<T[]> alloc;
+    /**
+     * Create a table representing a single SNP, using the array allocations
+     * provided.
+     *
+     * @param cases Array allocation for all rows of the individuals from the
+     * cases group
+     * @param cases_words Number of values of type \a T required to represent
+     * the genotypes for all individuals in the case group
+     * @param ctrls Array allocation for all rows of the individuals from the
+     * controls group
+     * @param ctrls_words Number of values of type \a T required to represent
+     * the genotypes for all individuals in the control group
+     */
+
+    GenotypeTable(const short order, const size_t cases_words,
+                  const size_t ctrls_words, std::shared_ptr<T> alloc, T *cases,
+                  T *ctrls)
+        : order(order), size(std::pow(3, order)), cases_words(cases_words),
+          ctrls_words(ctrls_words), alloc(alloc), cases(cases), ctrls(ctrls)
+    {
+    }
+
+    std::shared_ptr<T> alloc;
 
   public:
     /**

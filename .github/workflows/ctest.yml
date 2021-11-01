@@ -1,0 +1,25 @@
+name: CTest
+on:
+  push:
+    branches:
+      - main
+      - dev
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cc: [gcc+openmpi, intel+intelmpi, clang+mpich]
+    env:
+      GH_MATRIX_CC: ${{ matrix.cc }}
+    steps:
+      - name: Display configuration
+        run: |
+          printenv
+          lscpu
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Install dependencies
+        run: ./.github/scripts/prep.sh
+      - name: Build and test
+        run: ./.github/scripts/build_and_test.sh

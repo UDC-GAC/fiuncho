@@ -1,20 +1,3 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
  * @file ThreadedSearch.h
  * @author Christian Ponte
@@ -28,14 +11,12 @@
 #include <fiuncho/GenotypeTable.h>
 #include <fiuncho/Search.h>
 #include <fiuncho/algorithms/MutualInformation.h>
-#include <fiuncho/dataset/Dataset.h>
+#include <fiuncho/Dataset.h>
 #include <fiuncho/utils/MaxArray.h>
 #include <iostream>
 #include <pthread.h>
 #include <thread>
 #include <vector>
-
-#define BLOCK_SIZE (int)(16384 / powf(3, args.order - 2))
 
 /**
  * Epistasis search class that uses CPU multi-threading to complete the
@@ -80,11 +61,13 @@ class ThreadedSearch : public Search
         }
         double start_time = ts.tv_sec + ts.tv_nsec * 1e-9;
 #endif
-        if (args.order == 2) {
-            search_order_2(args);
-        } else {
-            search_order_gt_2(args);
-        }
+
+#ifdef SEGMENT_SIZE
+        segmented_search(args, SEGMENT_SIZE);
+#else
+        nonsegmented_search(args);
+#endif
+
 #ifdef BENCHMARK
         if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) == -1) {
             throw std::runtime_error("Error while CLOCK_THREAD_CPUTIME_ID");
@@ -93,57 +76,9 @@ class ThreadedSearch : public Search
 #endif
     }
 
-    static void search_order_2(Args &args)
+    static void segmented_search(Args &args, const size_t BASE_B)
     {
-        int i, j, k;
-        // Create the ContingencyTable vector, Result vector, and MI objects
-        std::vector<ContingencyTable<uint32_t>> cts;
-        std::vector<Result<int, float>> r(BLOCK_SIZE);
-        cts.reserve(BLOCK_SIZE);
-        for (i = 0; i < BLOCK_SIZE; ++i) {
-            cts.emplace_back(2, args.dataset[0].cases_words,
-                             args.dataset[0].ctrls_words);
-            r[i].combination.resize(2);
-        }
-        MutualInformation<float> mi(args.dataset.cases, args.dataset.ctrls);
-        // For each combination assigned by the distribution
-        j = 0;
-        for (auto c = args.distribution.begin(); c < args.distribution.end();
-             ++c) {
-            // Iterate over subsequent combinations
-            for (i = c->back() + 1; i < (int)args.dataset.snps; ++i) {
-                // If the block is full, compute all MI's
-                if (j == BLOCK_SIZE) {
-                    for (k = 0; k < BLOCK_SIZE; ++k) {
-                        // Compute mutual information
-                        r[k].val = mi.compute(cts[k]);
-                        args.maxarray.add(r[k]);
-                    }
-#ifdef BENCHMARK
-                    args.combinations += j;
-#endif
-                    j = 0;
-                }
-                r[j].combination[0] = c[0];
-                r[j].combination[1] = i;
-                // Fill contingency table
-                GenotypeTable<uint64_t>::combine_and_popcnt(
-                    args.dataset[c[0]], args.dataset[i], cts[j++]);
-            }
-        }
-        // For each contingency table remaining in the block
-        for (k = 0; k < j; ++k) {
-            // Compute mutual information
-            r[k].val = mi.compute(cts[k]);
-            args.maxarray.add(r[k]);
-        }
-#ifdef BENCHMARK
-        args.combinations += j;
-#endif
-    }
-
-    static void search_order_gt_2(Args &args)
-    {
+        const size_t B = BASE_B / (int)powf(3, args.order);
         int i, j, k;
         // Allocate genotype tables of size < target interaction order
         std::vector<GenotypeTable<uint64_t>> gts;
@@ -153,12 +88,10 @@ class ThreadedSearch : public Search
                              args.dataset[0].ctrls_words);
         }
         // Create ContingencyTable vector, Result vector, and MI objects
-        std::vector<ContingencyTable<uint32_t>> cts;
-        std::vector<Result<int, float>> r(BLOCK_SIZE);
-        cts.reserve(BLOCK_SIZE);
-        for (i = 0; i < BLOCK_SIZE; ++i) {
-            cts.emplace_back(args.order, args.dataset[0].cases_words,
-                             args.dataset[0].ctrls_words);
+        auto cts_array = ContingencyTable<uint32_t>::make_array(B, args.order);
+        auto cts = cts_array.get();
+        std::vector<Result<int, float>> r(B);
+        for (i = 0; i < B; ++i) {
             r[i].combination.resize(args.order);
         }
         MutualInformation<float> mi(args.dataset.cases, args.dataset.ctrls);
@@ -167,17 +100,16 @@ class ThreadedSearch : public Search
         for (auto c = args.distribution.begin(); c < args.distribution.end();
              ++c) {
             // Fill genotype tables
-            GenotypeTable<uint64_t>::combine(args.dataset[c[0]],
-                                             args.dataset[c[1]], gts[0]);
-            for (auto i = 1; i < args.order - 2; ++i) {
+            for (i = 0; i < args.order - 2; ++i) {
                 GenotypeTable<uint64_t>::combine(
-                    gts[i - 1], args.dataset[c[i + 1]], gts[i]);
+                    i > 0 ? gts[i - 1] : args.dataset[c[0]],
+                    args.dataset[c[i + 1]], gts[i]);
             }
             // Iterate over subsequent combinations
             for (i = c->back() + 1; i < (int)args.dataset.snps; ++i) {
                 // If the block is full, compute all MI's
-                if (j == BLOCK_SIZE) {
-                    for (k = 0; k < BLOCK_SIZE; ++k) {
+                if (j == B) {
+                    for (k = 0; k < B; ++k) {
                         // Compute mutual information
                         r[k].val = mi.compute(cts[k]);
                         args.maxarray.add(r[k]);
@@ -192,7 +124,8 @@ class ThreadedSearch : public Search
                 r[j].combination.back() = i;
                 // Fill contingency table
                 GenotypeTable<uint64_t>::combine_and_popcnt(
-                    gts.back(), args.dataset[i], cts[j++]);
+                    args.order > 2 ? gts.back() : args.dataset[c[0]],
+                    args.dataset[i], cts[j++]);
             }
         }
         // For each contingency table remaining in the block
@@ -204,6 +137,48 @@ class ThreadedSearch : public Search
 #ifdef BENCHMARK
         args.combinations += j;
 #endif
+    }
+
+    static void nonsegmented_search(Args &args)
+    {
+        int i, j, k;
+        // Allocate genotype tables of size < target interaction order
+        std::vector<GenotypeTable<uint64_t>> gts;
+        gts.reserve(args.order - 2);
+        for (auto o = 2; o < args.order; ++o) {
+            gts.emplace_back(o, args.dataset[0].cases_words,
+                             args.dataset[0].ctrls_words);
+        }
+        ContingencyTable<uint32_t> ct(args.order);
+        Result<int, float> r;
+        r.combination.resize(args.order);
+        MutualInformation<float> mi(args.dataset.cases, args.dataset.ctrls);
+        // For each combination assigned by the distribution
+        for (auto c = args.distribution.begin(); c < args.distribution.end();
+             ++c) {
+            // Fill genotype tables
+            for (i = 0; i < args.order - 2; ++i) {
+                GenotypeTable<uint64_t>::combine(
+                    i > 0 ? gts[i - 1] : args.dataset[c[0]],
+                    args.dataset[c[i + 1]], gts[i]);
+            }
+#ifdef BENCHMARK
+            args.combinations += args.dataset.snps - (c->back() + 1);
+#endif
+            // Iterate over subsequent combinations
+            for (i = c->back() + 1; i < (int)args.dataset.snps; ++i) {
+                memcpy(r.combination.data(), c->data(),
+                       c->size() * sizeof(int));
+                r.combination.back() = i;
+                // Fill contingency table
+                GenotypeTable<uint64_t>::combine_and_popcnt(
+                    args.order > 2 ? gts.back() : args.dataset[c[0]],
+                    args.dataset[i], ct);
+                // Compute mutual information
+                r.val = mi.compute(ct);
+                args.maxarray.add(r);
+            }
+        }
     }
 
   public:

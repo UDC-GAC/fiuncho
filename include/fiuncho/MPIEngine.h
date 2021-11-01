@@ -1,20 +1,3 @@
-/*
- * This file is part of Fiuncho.
- *
- * Fiuncho is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Fiuncho is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Fiuncho. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
  * @file MPIEngine.h
  * @author Christian Ponte
@@ -124,8 +107,8 @@ class MPIEngine
 
     template <typename T, typename... Args>
     std::vector<Result<int, float>>
-    run(const std::string &tped, const std::string &tfam,
-        const unsigned int order, const unsigned int outputs, Args &&...args)
+    run(const std::vector<std::string> &inputs, const unsigned int order,
+        const unsigned int outputs, Args &&...args)
     {
         std::vector<Result<int, float>> local_results, global_results;
 #ifdef BENCHMARK
@@ -133,11 +116,7 @@ class MPIEngine
         function_time = MPI_Wtime();
         dataset_time = MPI_Wtime();
 #endif
-#ifdef ALIGN
-        const auto dataset = Dataset<uint64_t>::read<ALIGN>(tped, tfam);
-#else
-        const auto dataset = Dataset<uint64_t>::read(tped, tfam);
-#endif
+        const auto dataset = Dataset<uint64_t>::read(inputs);
         // Check Dataset size to avoid int overflow
         if (dataset.snps > (size_t)std::numeric_limits<int>::max()) {
             throw std::runtime_error(
